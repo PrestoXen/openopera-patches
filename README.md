@@ -22,7 +22,8 @@ Or join #openopera on crowley.anonnet.org:6697
 - **freebsd-11-gcc6.patch**: FreeBSD compiling patch by kandeshvari, [source](https://gist.github.com/kandeshvari/6e69327fb017ea95bced85c6f297a29f)
 
 ### Windows patches
-- **VSInstructions.txt**: instructions for building with VS
+- **VSInstructions.txt**: instructions for building with VS (you should read this and the alternate version below)
+- **VSInstructionsAlt.txt**: translated instructions provided by RedCatX, [source](https://geektimes.ru/post/284588/)
 - **VS2015Fix.patch**: patch for building on VS2015
 
 A full mirror of gst-opera (gstreamer code used by Opera) is also uploaded [here](http://www22.zippyshare.com/v/Wp1PrPRW/file.html), as the mirror on opensource.opera.com has a lot of issues when cloning.

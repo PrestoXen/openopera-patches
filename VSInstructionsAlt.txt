@@ -1,0 +1,52 @@
+I compile under Windows. Enjoyed Visual Studio 2010.
+
+You need:
+CMake Tools for VisualStudio
+Python 2.x (I used 2.7)
+Strawberry Perl
+Pike
+vsyasm 1.2
+
+As well as the library:
+CURL 7.28
+OpenSSL 1.0.1c
+
+After installation, you need to install Perl to it XML::Twig library, which is done at the command line:
+
+cpan XML::Twig
+
+After installing Pike add the path to the corresponding executable in the PATH environment variable. I have this - C:\Program Files (x86)\Pike\bin
+
+vsyasm (version 1.2!) is set according to the readme file instructions.
+
+Then you need to unzip CURL and OpenSSL in presto folder\browser\adjunct\autoupdate\autoupdate_checker\platforms\universal_adaptation_layer\network
+Folders with them renamed «curl» and «openssl» respectively. Oh, and in the specified path it will already be located openssl folder, but it should be replaced because some files needed to compile it for some reason, there are no ...
+
+After that, open the project file curl\lib\libcurl.vcproj in VisualStudio 2010 and agree with the transformation. Go to the project properties, and C/C++ > Code Generation > Runtime Library, select Debug Multithreaded (/MTd) Configuration and Debug Multithreaded (/MT) for the Release configuration. If you do not, then the step of linking will be errors associated with certain characters conflicts in different libraries. Now you can compile libcurl in the Release configuration.
+
+Then compile OpenSSL, for this you will need to open a Visual Studio command prompt (Microsoft Visual Studio 2010> Visual Studio Tools). Go to the directory openssl:
+
+cd <path>\presto\browser\adjunct\autoupdate\autoupdate_checker\platforms\universal_adaptation_layer\network\openssl
+
+And compile:
+
+perl Configure VC-WIN32 no-shared --prefix=../../../../Output/openssl -MT
+ms\do_ms
+nmake -f ms\ntdll.mak
+nmake -f ms\ntdll.mak install
+
+Then copy the library from libcurl.lib curl\lib\Release, libeay32.lib and ssleay32.lib of presto\browser\adjunct\autoupdate\autoupdate_checker\Output\openssl\lib in autoupdate_checker\Output.
+
+run the script that is responsible for the generation of projects from the command line:
+
+python <path>\presto\browser\platforms\windows\vcxproj_update.py
+
+Open the solution presto\browser\platforms\windows\Opera_vc2010.sln, all projects in the solution should open normally. Go to the properties autoupdate_checker project and see Linker > Input > Additional Dependencies add wldap32.lib library in all configurations.
+
+Now you only have to compile the good-old Opera :)
+
+At the end of the compilation, the executable files in the directory will be presto\browser\Release (or the Debug, depending on the selected configuration). But there are still a couple of small strokes: you must copy the default skin in the folder skin, it needs to archive the contents presto\browser\adjunct\resources\skin\standard_skin in standard_skin.zip file and copy it to the specified folder. Opera can also angrily cursing the lack encoding.bin file, however, did not find it in the source code, I do not come up with nothing better than to simply copy it from the already established I ... Opera 12.17
+
+It is also surprised that the Debug-version of Opera on the first run gives several Assertion Failed (prev_url == url_size), but it may have something to do with the creation of a new profile. Release-version works absolutely fine.
+
+Thus, the source of the old Opera is now available. But what to do with them then - that is the question ...
