@@ -1,7 +1,7 @@
 # OpenOpera Patches
 A collection of patches sourced from different places, unknown authors (if you want to claim ownership of one just create an issue)
 
-Feel free to make a pull request if you have anything to add or fix.
+Feel free to make a pull request if you have anything to add or fix, or if you have any issues please make a report at https://github.com/PrestoXen/openopera-issues
 
 You're also welcome to join the OpenOpera IRC: http://site.anonnet.org/webirc/openopera  
 Or join #openopera on crowley.anonnet.org:6697
