@@ -34,9 +34,9 @@ If you installed 7zip and added it to your PATH the skin files will also be buil
 
 == VS2015
 
-Follow the VS2010 section above, and allow VS2015 to convert the project.
+Make sure you applied the VS2015Fix.patch file!
 
-It should build fine with no errors for 32 bit builds, currently only Release builds will build for x64 however.
+Follow the VS2010 section above, and allow VS2015 to convert the project. It should build fine with no errors for 32 bit builds, currently only Release builds will build for x64 however.
 
 To fix issues with CSS on x64 builds:
 - right click the 'desktop_starter' project file, open properties

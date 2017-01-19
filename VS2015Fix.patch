@@ -1,0 +1,224 @@
+diff --git a/modules/webgl/src/wgl_cgbuilder.cpp b/modules/webgl/src/wgl_cgbuilder.cpp
+index dc2653a..471094e 100644
+--- a/modules/webgl/src/wgl_cgbuilder.cpp
++++ b/modules/webgl/src/wgl_cgbuilder.cpp
+@@ -43,9 +43,9 @@ WGL_CgBuilder::EmitVertexShaderHeader(WGL_Printer *out_sink, BOOL for_attributes
+     ResetCounters();
+     out_sink->OutNewline();
+     if (for_attributes)
+-        out_sink->OutString("struct "VS_IN_STRUCT_NAME);
++        out_sink->OutString("struct " VS_IN_STRUCT_NAME);
+     else
+-        out_sink->OutString("struct "VS_OUT_STRUCT_NAME);
++        out_sink->OutString("struct " VS_OUT_STRUCT_NAME);
+     BlockBegin(out_sink);
+ }
+ 
+@@ -54,7 +54,7 @@ WGL_CgBuilder::EmitPixelShaderHeader(WGL_Printer *out_sink)
+ {
+     ResetCounters();
+     out_sink->OutNewline();
+-    out_sink->OutString("struct "PS_OUT_STRUCT_NAME);
++    out_sink->OutString("struct " PS_OUT_STRUCT_NAME);
+     BlockBegin(out_sink);
+ }
+ 
+@@ -2174,21 +2174,21 @@ CgTransformPosition(WGL_Printer *p, BOOL use_half_pixel)
+     p->OutNewline();
+     if (use_half_pixel)
+     {
+-        p->OutString(OSIN".gl_Position.x = "OSIN".gl_Position.x - webgl_op_half_pixel.x*"OSIN".gl_Position.w;");
++        p->OutString(OSIN".gl_Position.x = " OSIN".gl_Position.x - webgl_op_half_pixel.x*" OSIN".gl_Position.w;");
+         p->OutNewline();
+-        p->OutString(OSIN".gl_Position.y = -("OSIN".gl_Position.y - webgl_op_half_pixel.y*"OSIN".gl_Position.w);");
++        p->OutString(OSIN".gl_Position.y = -(" OSIN".gl_Position.y - webgl_op_half_pixel.y*" OSIN".gl_Position.w);");
+         p->OutNewline();
+     }
+     else
+     {
+-        p->OutString(OSIN".gl_Position.y = -"OSIN".gl_Position.y;");
++        p->OutString(OSIN".gl_Position.y = -" OSIN".gl_Position.y;");
+         p->OutNewline();
+     }
+ 
+     /* OpenGL expects the z value after the z divide (which becomes a
+        division by w) to be in the range -1 -> 1, while D3D expects 0 -> 1. We
+        map the first range onto the second. */
+-    p->OutString(OSIN".gl_Position.z = 0.5 * ("OSIN".gl_Position.z + "OSIN".gl_Position.w);");
++    p->OutString(OSIN".gl_Position.z = 0.5 * (" OSIN".gl_Position.z + " OSIN".gl_Position.w);");
+ 
+     p->OutNewline();
+ #undef OSIN
+@@ -2203,15 +2203,15 @@ WGL_CgBuilder::EmitVertexMain(WGL_FunctionDefn *fun)
+     out_sink->OutString("(");
+     if (config->vertex_shader_initial_parameters)
+         out_sink->OutString(config->vertex_shader_initial_parameters);
+-    out_sink->OutString(VS_IN_STRUCT_NAME" "IN_STRUCT_INSTANCE_NAME")");
++    out_sink->OutString(VS_IN_STRUCT_NAME" " IN_STRUCT_INSTANCE_NAME")");
+     BlockBegin(out_sink);
+ 
+     /* Assign an externally invisible global variable the input struct so that
+        non-main() functions can access attributes. */
+-    out_sink->OutString("::"IN_STRUCT_INSTANCE_NAME" = "IN_STRUCT_INSTANCE_NAME";");
++    out_sink->OutString("::" IN_STRUCT_INSTANCE_NAME" = " IN_STRUCT_INSTANCE_NAME";");
+     out_sink->OutNewline();
+ 
+-    out_sink->OutString(VS_OUT_STRUCT_NAME" "OUT_STRUCT_INSTANCE_NAME";");
++    out_sink->OutString(VS_OUT_STRUCT_NAME" " OUT_STRUCT_INSTANCE_NAME";");
+     out_sink->OutNewline();
+ 
+     out_gen.SetInGlobalScope(FALSE);
+@@ -2224,7 +2224,7 @@ WGL_CgBuilder::EmitVertexMain(WGL_FunctionDefn *fun)
+ 
+     CgTransformPosition(out_sink, config->for_directx_version <= 9);
+     out_sink->OutNewline();
+-    out_sink->OutString("return "OUT_STRUCT_INSTANCE_NAME";");
++    out_sink->OutString("return " OUT_STRUCT_INSTANCE_NAME";");
+     BlockEnd(out_sink);
+     out_sink->OutNewline();
+ 
+@@ -2247,7 +2247,7 @@ WGL_CgBuilder::ProcessVertexShader(WGL_DeclList *ls)
+     /* This externally invisible global variable is used to let subroutines
+        access attributes. It is assigned in the main function. */
+ 
+-    out_sink->OutString("static "VS_IN_STRUCT_NAME" "IN_STRUCT_INSTANCE_NAME";");
++    out_sink->OutString("static " VS_IN_STRUCT_NAME" " IN_STRUCT_INSTANCE_NAME";");
+     out_sink->OutNewline();
+ 
+     for (WGL_Decl *d = ls->list.First(); d; d = d->Suc())
+@@ -2276,7 +2276,7 @@ WGL_CgBuilder::ProcessFragmentShader(WGL_DeclList *ls, BOOL with_vertex_shader)
+     /* This externally invisible global variable is used to let subroutines
+        access attributes. It is assigned in the main function. */
+ 
+-    out_sink->OutString("static "VS_OUT_STRUCT_NAME" "IN_STRUCT_INSTANCE_NAME";");
++    out_sink->OutString("static " VS_OUT_STRUCT_NAME" " IN_STRUCT_INSTANCE_NAME";");
+     out_sink->OutNewline();
+ 
+     // Some special stuff needs to stay unprefixed since they are passed as parameters outside
+@@ -2329,7 +2329,7 @@ WGL_CgBuilder::EmitPixelMain(WGL_FunctionDefn *fun, BOOL with_vertex_shader)
+     out_sink->OutString("(");
+     if (config->pixel_shader_initial_parameters)
+         out_sink->OutString(config->pixel_shader_initial_parameters);
+-    out_sink->OutString(VS_OUT_STRUCT_NAME" "IN_STRUCT_INSTANCE_NAME);
++    out_sink->OutString(VS_OUT_STRUCT_NAME" " IN_STRUCT_INSTANCE_NAME);
+ 
+     // Check if the pixel shader is using gl_FragCoord or gl_PointCoord. They are always
+     // put outside of the input struct.
+@@ -2346,10 +2346,10 @@ WGL_CgBuilder::EmitPixelMain(WGL_FunctionDefn *fun, BOOL with_vertex_shader)
+ 
+     /* Assign an externally invisible global variable the input struct so that
+        non-main() functions can access varyings. */
+-    out_sink->OutString("::"IN_STRUCT_INSTANCE_NAME" = "IN_STRUCT_INSTANCE_NAME";");
++    out_sink->OutString("::" IN_STRUCT_INSTANCE_NAME" = " IN_STRUCT_INSTANCE_NAME";");
+     out_sink->OutNewline();
+ 
+-    out_sink->OutString(PS_OUT_STRUCT_NAME" "OUT_STRUCT_INSTANCE_NAME";");
++    out_sink->OutString(PS_OUT_STRUCT_NAME" " OUT_STRUCT_INSTANCE_NAME";");
+     out_sink->OutNewline();
+ 
+     out_gen.SetInGlobalScope(FALSE);
+@@ -2361,7 +2361,7 @@ WGL_CgBuilder::EmitPixelMain(WGL_FunctionDefn *fun, BOOL with_vertex_shader)
+         fun->body->VisitStmt(&out_gen);
+ 
+     out_sink->OutNewline();
+-    out_sink->OutString("return "OUT_STRUCT_INSTANCE_NAME";");
++    out_sink->OutString("return " OUT_STRUCT_INSTANCE_NAME";");
+     BlockEnd(out_sink);
+     out_sink->OutNewline();
+ 
+diff --git a/platforms/windows/installer/OperaInstaller.cpp b/platforms/windows/installer/OperaInstaller.cpp
+index 15ea71e..59c142d 100644
+--- a/platforms/windows/installer/OperaInstaller.cpp
++++ b/platforms/windows/installer/OperaInstaller.cpp
+@@ -1477,7 +1477,7 @@ OP_STATUS OperaInstaller::Install_Registry()
+ 
+ 		OpString key_reported;
+ 		key_reported.Empty();
+-		INST_HANDLE_ERROR(INIT_KEY_REPORTED_FAILED, NULL, key_reported.AppendFormat(UNI_L("%s")UNI_L(PATHSEP)UNI_L("%s"), m_installer_regops[i].key_path, m_installer_regops[i].value_name ));
++		INST_HANDLE_ERROR(INIT_KEY_REPORTED_FAILED, NULL, key_reported.AppendFormat(UNI_L("%s") UNI_L(PATHSEP) UNI_L("%s"), m_installer_regops[i].key_path, m_installer_regops[i].value_name ));
+ 		if (uninstall_key)
+ 		{
+ 			INST_HANDLE_ERROR(REGISTRY_OPERATION_FAILED, key_reported.CStr(), DoRegistryOperation(root_key, m_installer_regops[i], key_path, m_installer_transaction, m_install_log));
+@@ -2310,7 +2310,7 @@ OP_STATUS OperaInstaller::Uninstall_Registry()
+ 	{
+ 		OpString key_reported;
+ 		key_reported.Empty();
+-		INST_HANDLE_ERROR(INIT_KEY_REPORTED_FAILED, NULL, key_reported.AppendFormat(UNI_L("%d|%s")UNI_L(PATHSEP)UNI_L("%s"),key_log->GetCleanKey(), key_log->GetKeyPath(), key_log->GetValueName()));
++		INST_HANDLE_ERROR(INIT_KEY_REPORTED_FAILED, NULL, key_reported.AppendFormat(UNI_L("%d|%s") UNI_L(PATHSEP) UNI_L("%s"),key_log->GetCleanKey(), key_log->GetKeyPath(), key_log->GetValueName()));
+ 
+ 		//Use the clean value that was stored in the log to find out what we need to remove.
+ 		if (key_log->GetCleanKey() == 0)
+diff --git a/platforms/windows/pi/WindowsOpSystemInfo.cpp b/platforms/windows/pi/WindowsOpSystemInfo.cpp
+index 66298b1..49cad51 100644
+--- a/platforms/windows/pi/WindowsOpSystemInfo.cpp
++++ b/platforms/windows/pi/WindowsOpSystemInfo.cpp
+@@ -770,7 +770,7 @@ void WindowsOpSystemInfo::GetPluginPathL(const OpStringC &dfpath, OpString &newp
+ 
+ 	OpString path; ANCHOR(OpString, path);
+ 	LEAVE_IF_ERROR(g_folder_manager->GetFolderPath(OPFILE_RESOURCES_FOLDER, path));
+-	path.AppendL("program"PATHSEP"plugins");
++	path.AppendL("program" PATHSEP"plugins");
+ 
+ 	if (tmppluginpath.HasContent())
+ 		tmppluginpath.AppendL(";");
+diff --git a/platforms/windows/pi/WindowsOpTimeInfo.cpp b/platforms/windows/pi/WindowsOpTimeInfo.cpp
+index ef5561a..92a817e 100644
+--- a/platforms/windows/pi/WindowsOpTimeInfo.cpp
++++ b/platforms/windows/pi/WindowsOpTimeInfo.cpp
+@@ -310,7 +310,7 @@ long WindowsOpTimeInfo::GetTimezone()
+ 	{
+ 		return 0;
+ 	}
+-	m_timezone = timezone + (time_local && time_local->tm_isdst ? _dstbias : 0);
++	m_timezone = _timezone + (time_local && time_local->tm_isdst ? _dstbias : 0);
+ 	m_time_zone_use_cache = TRUE;
+ 
+ 	m_is_dst = time_local->tm_isdst;
+diff --git a/platforms/windows/system.h b/platforms/windows/system.h
+index 1885eb8..e013a71 100644
+--- a/platforms/windows/system.h
++++ b/platforms/windows/system.h
+@@ -11,6 +11,8 @@
+ 
+ // Defines to make it more readable when we turn 
+ // on/off code for different VS versions.
++#define VS2015 1900 // VC++ 14.0 (2015)
++#define VS2013 1800 // VC++ 12.0 (2013)
+ #define VS2012 1700 // VC++ 11.0 (2012)
+ #define VS2010 1600 // VC++ 10.0 (2010)
+ #define VS2008 1500 // VC++  9.0 (2008)
+@@ -41,6 +43,12 @@
+ 
+ #define NTDDI_WIN7                          0x06010000
+ 
++#define NTDDI_WIN8                          0x06020000
++#define NTDDI_WINBLUE                       0x06030000
++
++#define NTDDI_WINTHRESHOLD                  0x0A000000
++#define NTDDI_WIN10                         0x0A000000
++
+ // Let's use special code for VC++ 8.0 (2005) and higher
+ #if _MSC_VER >= VS2005
+ #define WIN_USE_STDLIB_64BIT
+@@ -151,10 +159,10 @@
+ #pragma warning( error : 4310 )
+ 
+ // pointer truncation (64-bit unsafe) - Use when compiling for 64-bit to catch truncated pointers
+-#pragma warning( error : 4311 )
++//#pragma warning( error : 4311 )
+ 
+ // You attempted to assign a 32-bit value to a 64-bit type. For example, casting a 32-bit int or 32-bit long to a 64-bit pointer.
+-#pragma warning( error : 4312 )
++//#pragma warning( error : 4312 )
+ 
+ // signed/unsigned mismatch with operators (level 4)
+ #pragma warning( error : 4389 )
+@@ -519,7 +527,7 @@ typedef HANDLE OpSemaphoreId;
+ #define op_ldexp ldexp
+ 
+ #ifdef __cplusplus
+-  inline double op_dummy_fabs(double x) { return ::abs(x); }
++  inline double op_dummy_fabs(double x) { return ::fabs(x); }
+ # define op_fabs(x) op_dummy_fabs(static_cast<double>(x))
+ #else
+ #  define op_fabs(x) abs(static_cast<double>(x))
