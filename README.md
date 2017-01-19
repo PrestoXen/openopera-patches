@@ -9,13 +9,13 @@ Or join #openopera on crowley.anonnet.org:6697
 ## Contents
 
 ### General patches
-- **JSExecutionFix.patch**: patch to fix javascript execution errors when building with modern compilers (g++ 5.x+)
 - **FalseNullFix.patch**: patch to fix some FALSE->NULL errors
 - **VP9Fix.patch**: VP9 support patch (requires libvpx-1.3.0 (exactly)), no Windows support atm.
 
 ### Linux/FreeBSD patches
 - **LinuxBuildFix.patch**: fixes some build issues on Linux
 - **LinuxReleaseFix.patch**: makes Linux release builds more stable
+- **JSExecutionFix.patch**: patch to fix javascript execution errors when building with modern compilers (g++ 5.x+)
 - **PiInstructions.txt**: instructions on building for Raspberry Pi
 - **PiFixes.patch**: patches for building on Raspberry Pi
 - **ArmFixes.patch**: patches for building for ARM platform (needed for Pi)
