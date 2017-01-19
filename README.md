@@ -23,6 +23,6 @@ Or join #openopera on crowley.anonnet.org:6697
 
 ### Windows patches
 - **VSInstructions.txt**: instructions for building with VS
-- **VS2015Fix.patch**: patch for building on VS2015 (adding soon)
+- **VS2015Fix.patch**: patch for building on VS2015
 
 A full mirror of gst-opera (gstreamer code used by Opera) is also uploaded [here](http://www22.zippyshare.com/v/Wp1PrPRW/file.html), as the mirror on opensource.opera.com has a lot of issues when cloning.
