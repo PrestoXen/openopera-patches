@@ -1,0 +1,784 @@
+diff --git a/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/gstvp8lib.c b/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/gstvp8lib.c
+index 565131a..35fc098 100644
+--- a/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/gstvp8lib.c
++++ b/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/gstvp8lib.c
+@@ -29,6 +29,7 @@ vpx_codec_get_caps_ft vpx_codec_get_caps_fptr;
+ vpx_codec_peek_stream_info_ft vpx_codec_peek_stream_info_fptr;
+ vpx_codec_control__ft vpx_codec_control__fptr;
+ vpx_codec_vp8_dx_ft vpx_codec_vp8_dx_fptr;
++vpx_codec_vp9_dx_ft vpx_codec_vp9_dx_fptr;
+ 
+ /* Init functions. */
+ #define EXPORT_LIBVPX_INIT(SYM) \
+@@ -43,6 +44,7 @@ EXPORT_LIBVPX_INIT(vpx_codec_get_caps);
+ EXPORT_LIBVPX_INIT(vpx_codec_peek_stream_info);
+ EXPORT_LIBVPX_INIT(vpx_codec_control_);
+ EXPORT_LIBVPX_INIT(vpx_codec_vp8_dx);
++EXPORT_LIBVPX_INIT(vpx_codec_vp9_dx);
+ 
+ gboolean verify_lib_init()
+ {
+@@ -55,5 +57,7 @@ gboolean verify_lib_init()
+ 		vpx_codec_get_caps &&
+ 		vpx_codec_peek_stream_info &&
+ 		vpx_codec_control_ &&
+-		vpx_codec_vp8_dx;
++		vpx_codec_vp8_dx &&
++		vpx_codec_vp9_dx;
++		
+ }
+diff --git a/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/gstvp8lib.h b/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/gstvp8lib.h
+index d6c42e8..7e117a0 100644
+--- a/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/gstvp8lib.h
++++ b/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/gstvp8lib.h
+@@ -38,6 +38,7 @@ typedef vpx_codec_caps_t (*vpx_codec_get_caps_ft)(vpx_codec_iface_t *iface);
+ typedef vpx_codec_err_t (*vpx_codec_peek_stream_info_ft)(vpx_codec_iface_t *iface, const uint8_t *data, unsigned int data_sz, vpx_codec_stream_info_t *si);
+ typedef vpx_codec_err_t (*vpx_codec_control__ft)(vpx_codec_ctx_t  *ctx, int ctrl_id, ...);
+ typedef vpx_codec_iface_t *(*vpx_codec_vp8_dx_ft)(void);
++typedef vpx_codec_iface_t *(*vpx_codec_vp9_dx_ft)(void);
+ 
+ /* Function pointer declarations. */
+ extern vpx_codec_destroy_ft vpx_codec_destroy_fptr;
+@@ -49,6 +50,7 @@ extern vpx_codec_get_caps_ft vpx_codec_get_caps_fptr;
+ extern vpx_codec_peek_stream_info_ft vpx_codec_peek_stream_info_fptr;
+ extern vpx_codec_control__ft vpx_codec_control__fptr;
+ extern vpx_codec_vp8_dx_ft vpx_codec_vp8_dx_fptr;
++extern vpx_codec_vp9_dx_ft vpx_codec_vp9_dx_fptr;
+ 
+ /* Bindings. */
+ #define vpx_codec_destroy vpx_codec_destroy_fptr
+@@ -60,6 +62,7 @@ extern vpx_codec_vp8_dx_ft vpx_codec_vp8_dx_fptr;
+ #define vpx_codec_peek_stream_info vpx_codec_peek_stream_info_fptr
+ #define vpx_codec_control_ vpx_codec_control__fptr
+ #define vpx_codec_vp8_dx vpx_codec_vp8_dx_fptr
++#define vpx_codec_vp9_dx vpx_codec_vp9_dx_fptr
+ 
+ /**
+  * Verify that libvpx symbols have been initialized.
+diff --git a/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/gstvp9dec.c b/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/gstvp9dec.c
+new file mode 100644
+index 0000000..60031c1
+--- /dev/null
++++ b/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/gstvp9dec.c
+@@ -0,0 +1,583 @@
++/* VP9 plugin
++ * Copyright (C) 2006 David Schleef <ds@schleef.org>
++ * Copyright (C) 2008,2009,2010 Entropy Wave Inc
++ * Copyright (C) 2010 Sebastian Dröge <sebastian.droege@collabora.co.uk>
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Library General Public
++ * License as published by the Free Software Foundation; either
++ * version 2 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Library General Public License for more details.
++ *
++ * You should have received a copy of the GNU Library General Public
++ * License along with this library; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 02111-1307, USA.
++ *
++ */
++
++#ifdef HAVE_CONFIG_H
++#include "config.h"
++#endif
++
++#ifdef HAVE_VP9_DECODER
++
++#include <gst/gst.h>
++#include <gst/video/gstbasevideodecoder.h>
++#include <gst/video/gstbasevideoutils.h>
++#include <gst/base/gstbasetransform.h>
++#include <gst/base/gstadapter.h>
++#include <gst/video/video.h>
++#include <string.h>
++#include <math.h>
++
++/* FIXME: Undef HAVE_CONFIG_H because vpx_codec.h uses it,
++ * which causes compilation failures */
++#ifdef HAVE_CONFIG_H
++#undef HAVE_CONFIG_H
++#endif
++
++#include "gstvp8utils.h"
++
++/* Add Opera to make unique GType */
++#define GstVP9Dec GstOperaVP9Dec
++#define GstVP9DecClass GstOperaVP9DecClass
++
++GST_DEBUG_CATEGORY_STATIC (gst_vp9dec_debug);
++#define GST_CAT_DEFAULT gst_vp9dec_debug
++
++#define GST_TYPE_VP9_DEC \
++  (gst_vp9_dec_get_type())
++#define GST_VP9_DEC(obj) \
++  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_VP9_DEC,GstVP9Dec))
++#define GST_VP9_DEC_CLASS(klass) \
++  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_VP9_DEC,GstVP9DecClass))
++#define GST_IS_GST_VP9_DEC(obj) \
++  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_VP9_DEC))
++#define GST_IS_GST_VP9_DEC_CLASS(obj) \
++  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_VP9_DEC))
++
++typedef struct _GstVP9Dec GstVP9Dec;
++typedef struct _GstVP9DecClass GstVP9DecClass;
++
++struct _GstVP9Dec
++{
++  GstBaseVideoDecoder base_video_decoder;
++
++  vpx_codec_ctx_t decoder;
++
++  /* state */
++
++  gboolean decoder_inited;
++
++  /* properties */
++  gboolean post_processing;
++  enum vp8_postproc_level post_processing_flags;
++  gint deblocking_level;
++  gint noise_level;
++};
++
++struct _GstVP9DecClass
++{
++  GstBaseVideoDecoderClass base_video_decoder_class;
++};
++
++
++/* GstVP9Dec signals and args */
++enum
++{
++  LAST_SIGNAL
++};
++
++
++#define DEFAULT_POST_PROCESSING FALSE
++#define DEFAULT_POST_PROCESSING_FLAGS (VP8_DEBLOCK | VP8_DEMACROBLOCK)
++#define DEFAULT_DEBLOCKING_LEVEL 4
++#define DEFAULT_NOISE_LEVEL 0
++
++enum
++{
++  PROP_0,
++  PROP_POST_PROCESSING,
++  PROP_POST_PROCESSING_FLAGS,
++  PROP_DEBLOCKING_LEVEL,
++  PROP_NOISE_LEVEL
++};
++
++#define C_FLAGS(v) ((guint) v)
++#define GST_VP9_DEC_TYPE_POST_PROCESSING_FLAGS (gst_vp9_dec_post_processing_flags_get_type())
++static GType
++gst_vp9_dec_post_processing_flags_get_type (void)
++{
++  static const GFlagsValue values[] = {
++    {C_FLAGS (VP8_DEBLOCK), "Deblock", "deblock"},
++    {C_FLAGS (VP8_DEMACROBLOCK), "Demacroblock", "demacroblock"},
++    {C_FLAGS (VP8_ADDNOISE), "Add noise", "addnoise"},
++    {0, NULL, NULL}
++  };
++  static volatile GType id = 0;
++
++  if (g_once_init_enter ((gsize *) & id)) {
++    GType _id;
++
++    _id = g_flags_register_static ("GstOperaVP9DecPostProcessingFlags", values);
++
++    g_once_init_leave ((gsize *) & id, _id);
++  }
++
++  return id;
++}
++
++#undef C_FLAGS
++
++static void gst_vp9_dec_finalize (GObject * object);
++#ifndef OPERA_MINIMAL_GST
++static void gst_vp9_dec_set_property (GObject * object, guint prop_id,
++    const GValue * value, GParamSpec * pspec);
++static void gst_vp9_dec_get_property (GObject * object, guint prop_id,
++    GValue * value, GParamSpec * pspec);
++
++#endif /* OPERA_MINIMAL_GST */
++static gboolean gst_vp9_dec_start (GstBaseVideoDecoder * decoder);
++static gboolean gst_vp9_dec_stop (GstBaseVideoDecoder * decoder);
++static gboolean gst_vp9_dec_reset (GstBaseVideoDecoder * decoder);
++static GstFlowReturn gst_vp9_dec_parse_data (GstBaseVideoDecoder * decoder,
++    gboolean at_eos);
++static GstFlowReturn gst_vp9_dec_handle_frame (GstBaseVideoDecoder * decoder,
++    GstVideoFrame * frame, GstClockTimeDiff deadline);
++
++GType gst_vp9_dec_get_type (void);
++
++static GstStaticPadTemplate gst_vp9_dec_sink_template =
++GST_STATIC_PAD_TEMPLATE ("sink",
++    GST_PAD_SINK,
++    GST_PAD_ALWAYS,
++    GST_STATIC_CAPS ("video/x-vp9")
++    );
++
++static GstStaticPadTemplate gst_vp9_dec_src_template =
++GST_STATIC_PAD_TEMPLATE ("src",
++    GST_PAD_SRC,
++    GST_PAD_ALWAYS,
++    GST_STATIC_CAPS (GST_VIDEO_CAPS_YUV ("I420"))
++    );
++
++GST_BOILERPLATE (GstVP9Dec, gst_vp9_dec, GstBaseVideoDecoder,
++    GST_TYPE_BASE_VIDEO_DECODER);
++
++static void
++gst_vp9_dec_base_init (gpointer g_class)
++{
++  GstElementClass *element_class = GST_ELEMENT_CLASS (g_class);
++
++  gst_element_class_add_pad_template (element_class,
++      gst_static_pad_template_get (&gst_vp9_dec_src_template));
++  gst_element_class_add_pad_template (element_class,
++      gst_static_pad_template_get (&gst_vp9_dec_sink_template));
++
++  gst_element_class_set_details_simple (element_class,
++      "On2 VP9 Decoder",
++      "Codec/Decoder/Video",
++      "Decode VP9 video streams", "David Schleef <ds@entropywave.com>");
++}
++
++static void
++gst_vp9_dec_class_init (GstVP9DecClass * klass)
++{
++  GObjectClass *gobject_class;
++  GstElementClass *element_class;
++  GstBaseVideoDecoderClass *base_video_decoder_class;
++
++  gobject_class = G_OBJECT_CLASS (klass);
++  element_class = GST_ELEMENT_CLASS (klass);
++  base_video_decoder_class = GST_BASE_VIDEO_DECODER_CLASS (klass);
++
++#ifndef OPERA_MINIMAL_GST
++  gobject_class->set_property = gst_vp9_dec_set_property;
++  gobject_class->get_property = gst_vp9_dec_get_property;
++#endif /* OPERA_MINIMAL_GST */
++  gobject_class->finalize = gst_vp9_dec_finalize;
++
++#ifndef OPERA_MINIMAL_GST
++  g_object_class_install_property (gobject_class, PROP_POST_PROCESSING,
++      g_param_spec_boolean ("post-processing", "Post Processing",
++          "Enable post processing", DEFAULT_POST_PROCESSING,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_POST_PROCESSING_FLAGS,
++      g_param_spec_flags ("post-processing-flags", "Post Processing Flags",
++          "Flags to control post processing",
++          GST_VP9_DEC_TYPE_POST_PROCESSING_FLAGS, DEFAULT_POST_PROCESSING_FLAGS,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_DEBLOCKING_LEVEL,
++      g_param_spec_uint ("deblocking-level", "Deblocking Level",
++          "Deblocking level",
++          0, 16, DEFAULT_DEBLOCKING_LEVEL,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_NOISE_LEVEL,
++      g_param_spec_uint ("noise-level", "Noise Level",
++          "Noise level",
++          0, 16, DEFAULT_NOISE_LEVEL,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++#endif /* OPERA_MINIMAL_GST */
++
++  base_video_decoder_class->start = gst_vp9_dec_start;
++  base_video_decoder_class->stop = gst_vp9_dec_stop;
++  base_video_decoder_class->reset = gst_vp9_dec_reset;
++  base_video_decoder_class->parse_data = gst_vp9_dec_parse_data;
++  base_video_decoder_class->handle_frame = gst_vp9_dec_handle_frame;
++
++  GST_DEBUG_CATEGORY_INIT (gst_vp9dec_debug, "vp9dec", 0, "VP9 Decoder");
++}
++
++static void
++gst_vp9_dec_init (GstVP9Dec * gst_vp9_dec, GstVP9DecClass * klass)
++{
++  GstBaseVideoDecoder *decoder = (GstBaseVideoDecoder *) gst_vp9_dec;
++
++  GST_DEBUG_OBJECT (gst_vp9_dec, "gst_vp9_dec_init");
++  decoder->packetized = TRUE;
++  gst_vp9_dec->post_processing = DEFAULT_POST_PROCESSING;
++  gst_vp9_dec->post_processing_flags = DEFAULT_POST_PROCESSING_FLAGS;
++  gst_vp9_dec->deblocking_level = DEFAULT_DEBLOCKING_LEVEL;
++  gst_vp9_dec->noise_level = DEFAULT_NOISE_LEVEL;
++}
++
++static void
++gst_vp9_dec_finalize (GObject * object)
++{
++  GstVP9Dec *gst_vp9_dec;
++
++  GST_DEBUG_OBJECT (object, "finalize");
++
++  g_return_if_fail (GST_IS_GST_VP9_DEC (object));
++  gst_vp9_dec = GST_VP9_DEC (object);
++
++  G_OBJECT_CLASS (parent_class)->finalize (object);
++}
++
++#ifndef OPERA_MINIMAL_GST
++
++static void
++gst_vp9_dec_set_property (GObject * object, guint prop_id,
++    const GValue * value, GParamSpec * pspec)
++{
++  GstVP9Dec *dec;
++
++  g_return_if_fail (GST_IS_GST_VP9_DEC (object));
++  dec = GST_VP9_DEC (object);
++
++  GST_DEBUG_OBJECT (object, "gst_vp9_dec_set_property");
++  switch (prop_id) {
++    case PROP_POST_PROCESSING:
++      dec->post_processing = g_value_get_boolean (value);
++      break;
++    case PROP_POST_PROCESSING_FLAGS:
++      dec->post_processing_flags = g_value_get_flags (value);
++      break;
++    case PROP_DEBLOCKING_LEVEL:
++      dec->deblocking_level = g_value_get_uint (value);
++      break;
++    case PROP_NOISE_LEVEL:
++      dec->noise_level = g_value_get_uint (value);
++      break;
++    default:
++      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
++      break;
++  }
++}
++
++static void
++gst_vp9_dec_get_property (GObject * object, guint prop_id, GValue * value,
++    GParamSpec * pspec)
++{
++  GstVP9Dec *dec;
++
++  g_return_if_fail (GST_IS_GST_VP9_DEC (object));
++  dec = GST_VP9_DEC (object);
++
++  switch (prop_id) {
++    case PROP_POST_PROCESSING:
++      g_value_set_boolean (value, dec->post_processing);
++      break;
++    case PROP_POST_PROCESSING_FLAGS:
++      g_value_set_flags (value, dec->post_processing_flags);
++      break;
++    case PROP_DEBLOCKING_LEVEL:
++      g_value_set_uint (value, dec->deblocking_level);
++      break;
++    case PROP_NOISE_LEVEL:
++      g_value_set_uint (value, dec->noise_level);
++      break;
++    default:
++      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
++      break;
++  }
++}
++
++#endif /* OPERA_MINIMAL_GST */
++
++static gboolean
++gst_vp9_dec_start (GstBaseVideoDecoder * decoder)
++{
++  GstVP9Dec *gst_vp9_dec = GST_VP9_DEC (decoder);
++
++  GST_DEBUG_OBJECT (gst_vp9_dec, "start");
++  gst_vp9_dec->decoder_inited = FALSE;
++
++  return TRUE;
++}
++
++static gboolean
++gst_vp9_dec_stop (GstBaseVideoDecoder * base_video_decoder)
++{
++  GstVP9Dec *gst_vp9_dec = GST_VP9_DEC (base_video_decoder);
++
++  GST_DEBUG_OBJECT (gst_vp9_dec, "stop");
++  if (gst_vp9_dec->decoder_inited)
++    vpx_codec_destroy (&gst_vp9_dec->decoder);
++  gst_vp9_dec->decoder_inited = FALSE;
++  return TRUE;
++}
++
++static gboolean
++gst_vp9_dec_reset (GstBaseVideoDecoder * base_video_decoder)
++{
++  GstVP9Dec *decoder;
++
++  GST_DEBUG_OBJECT (base_video_decoder, "reset");
++
++  decoder = GST_VP9_DEC (base_video_decoder);
++
++  if (decoder->decoder_inited)
++    vpx_codec_destroy (&decoder->decoder);
++  decoder->decoder_inited = FALSE;
++
++  return TRUE;
++}
++
++static GstFlowReturn
++gst_vp9_dec_parse_data (GstBaseVideoDecoder * decoder, gboolean at_eos)
++{
++  return GST_FLOW_OK;
++}
++
++#ifndef OPERA_MINIMAL_GST
++static void
++gst_vp9_dec_send_tags (GstVP9Dec * dec)
++{
++  GstTagList *list;
++
++  list = gst_tag_list_new ();
++  gst_tag_list_add (list, GST_TAG_MERGE_REPLACE,
++      GST_TAG_VIDEO_CODEC, "VP9 video", NULL);
++
++  gst_element_found_tags_for_pad (GST_ELEMENT (dec),
++      GST_BASE_VIDEO_CODEC_SRC_PAD (dec), list);
++}
++#endif /* OPERA_MINIMAL_GST */
++
++static void
++gst_vp9_dec_image_to_buffer (GstVP9Dec * dec, const vpx_image_t * img,
++    GstBuffer * buffer)
++{
++  GstBaseVideoDecoder *decoder = (GstBaseVideoDecoder *) dec;
++  int stride, w, h, i;
++  guint8 *d;
++
++  d = GST_BUFFER_DATA (buffer) +
++      gst_video_format_get_component_offset (decoder->state.format, 0,
++      decoder->state.width, decoder->state.height);
++  stride =
++      gst_video_format_get_row_stride (decoder->state.format, 0,
++      decoder->state.width);
++  h = gst_video_format_get_component_height (decoder->state.format, 0,
++      decoder->state.height);
++  h = MIN (h, img->d_h);
++  w = gst_video_format_get_component_width (decoder->state.format, 0,
++      decoder->state.width);
++  w = MIN (w, img->d_w);
++
++  for (i = 0; i < h; i++)
++    memcpy (d + i * stride,
++        img->planes[VPX_PLANE_Y] + i * img->stride[VPX_PLANE_Y], w);
++
++  d = GST_BUFFER_DATA (buffer) +
++      gst_video_format_get_component_offset (decoder->state.format, 1,
++      decoder->state.width, decoder->state.height);
++  stride =
++      gst_video_format_get_row_stride (decoder->state.format, 1,
++      decoder->state.width);
++  h = gst_video_format_get_component_height (decoder->state.format, 1,
++      decoder->state.height);
++  h = MIN (h, img->d_h >> img->y_chroma_shift);
++  w = gst_video_format_get_component_width (decoder->state.format, 1,
++      decoder->state.width);
++  w = MIN (w, img->d_w >> img->x_chroma_shift);
++  for (i = 0; i < h; i++)
++    memcpy (d + i * stride,
++        img->planes[VPX_PLANE_U] + i * img->stride[VPX_PLANE_U], w);
++
++  d = GST_BUFFER_DATA (buffer) +
++      gst_video_format_get_component_offset (decoder->state.format, 2,
++      decoder->state.width, decoder->state.height);
++  /* Same stride, height, width as above */
++  for (i = 0; i < h; i++)
++    memcpy (d + i * stride,
++        img->planes[VPX_PLANE_V] + i * img->stride[VPX_PLANE_V], w);
++}
++
++static GstFlowReturn
++gst_vp9_dec_handle_frame (GstBaseVideoDecoder * decoder, GstVideoFrame * frame,
++    GstClockTimeDiff deadline)
++{
++  GstVP9Dec *dec;
++  GstFlowReturn ret = GST_FLOW_OK;
++  vpx_codec_err_t status;
++  vpx_codec_iter_t iter = NULL;
++  vpx_image_t *img;
++  long decoder_deadline = 0;
++
++  GST_DEBUG_OBJECT (decoder, "handle_frame");
++
++  dec = GST_VP9_DEC (decoder);
++
++  if (!dec->decoder_inited) {
++    int flags = 0;
++    vpx_codec_stream_info_t stream_info;
++    vpx_codec_caps_t caps;
++
++    memset (&stream_info, 0, sizeof (stream_info));
++    stream_info.sz = sizeof (stream_info);
++
++    /* Call vpx_codec_vp9_dx() instead of referencing vpx_codec_vp9_dx_algo
++       directly. This makes it easier to implement the late libvpx linking done
++       by Opera. */
++    status = vpx_codec_peek_stream_info (vpx_codec_vp9_dx(),
++        GST_BUFFER_DATA (frame->sink_buffer),
++        GST_BUFFER_SIZE (frame->sink_buffer), &stream_info);
++
++    if (status != VPX_CODEC_OK || !stream_info.is_kf) {
++      GST_WARNING_OBJECT (decoder, "No keyframe, skipping");
++      gst_base_video_decoder_skip_frame (decoder, frame);
++      return GST_FLOW_OK;
++    }
++
++    /* should set size here */
++    decoder->state.width = stream_info.w;
++    decoder->state.height = stream_info.h;
++    decoder->state.format = GST_VIDEO_FORMAT_I420;
++#ifndef OPERA_MINIMAL_GST
++    gst_vp9_dec_send_tags (dec);
++#endif
++
++    caps = vpx_codec_get_caps (vpx_codec_vp9_dx());
++
++    if (dec->post_processing) {
++      if (!(caps & VPX_CODEC_CAP_POSTPROC)) {
++        GST_WARNING_OBJECT (decoder,
++            "Decoder does not support post processing");
++      } else {
++        flags |= VPX_CODEC_USE_POSTPROC;
++      }
++    }
++
++    status =
++        vpx_codec_dec_init (&dec->decoder, vpx_codec_vp9_dx(), NULL, flags);
++    if (status != VPX_CODEC_OK) {
++      GST_ELEMENT_ERROR (dec, LIBRARY, INIT,
++          ("Failed to initialize VP9 decoder"), ("%s",
++              gst_vpx_error_name (status)));
++      return GST_FLOW_ERROR;
++    }
++
++    if ((caps & VPX_CODEC_CAP_POSTPROC) && dec->post_processing) {
++      vp8_postproc_cfg_t pp_cfg = { 0, };
++
++      pp_cfg.post_proc_flag = dec->post_processing_flags;
++      pp_cfg.deblocking_level = dec->deblocking_level;
++      pp_cfg.noise_level = dec->noise_level;
++
++      status = vpx_codec_control (&dec->decoder, VP8_SET_POSTPROC, &pp_cfg);
++      if (status != VPX_CODEC_OK) {
++        GST_WARNING_OBJECT (dec, "Couldn't set postprocessing settings: %s",
++            gst_vpx_error_name (status));
++      }
++    }
++
++    dec->decoder_inited = TRUE;
++  }
++
++  if (!GST_BUFFER_FLAG_IS_SET (frame->sink_buffer, GST_BUFFER_FLAG_DELTA_UNIT))
++    gst_base_video_decoder_set_sync_point (decoder);
++
++#if 0
++  if (GST_PAD_CAPS (GST_BASE_VIDEO_CODEC_SRC_PAD (decoder)) == NULL) {
++    GstCaps *caps;
++
++    caps = gst_video_format_new_caps (decoder->state.format,
++        decoder->state.width, decoder->state.height,
++        decoder->state.fps_n, decoder->state.fps_d,
++        decoder->state.par_n, decoder->state.par_d);
++
++    GST_DEBUG ("setting caps %" GST_PTR_FORMAT, caps);
++
++    gst_pad_set_caps (GST_BASE_VIDEO_CODEC_SRC_PAD (decoder), caps);
++  }
++#endif
++
++  if (deadline < 0) {
++    decoder_deadline = 1;
++  } else if (deadline == G_MAXINT64) {
++    decoder_deadline = 0;
++  } else {
++    decoder_deadline = MAX (1, deadline / GST_MSECOND);
++  }
++
++  status = vpx_codec_decode (&dec->decoder,
++      GST_BUFFER_DATA (frame->sink_buffer),
++      GST_BUFFER_SIZE (frame->sink_buffer), NULL, decoder_deadline);
++  if (status) {
++    GST_ELEMENT_ERROR (decoder, LIBRARY, ENCODE,
++        ("Failed to decode frame"), ("%s", gst_vpx_error_name (status)));
++    return GST_FLOW_ERROR;
++  }
++
++  img = vpx_codec_get_frame (&dec->decoder, &iter);
++  if (img) {
++    if (deadline < 0) {
++      GST_LOG_OBJECT (dec, "Skipping late frame (%f s past deadline)",
++          (double) -deadline / GST_SECOND);
++      gst_base_video_decoder_skip_frame (decoder, frame);
++    } else {
++      ret = gst_base_video_decoder_alloc_src_frame (decoder, frame);
++
++      if (ret == GST_FLOW_OK) {
++        gst_vp9_dec_image_to_buffer (dec, img, frame->src_buffer);
++        gst_base_video_decoder_finish_frame (decoder, frame);
++      } else {
++        gst_base_video_decoder_skip_frame (decoder, frame);
++      }
++    }
++
++    vpx_img_free (img);
++
++    while ((img = vpx_codec_get_frame (&dec->decoder, &iter))) {
++      GST_WARNING_OBJECT (decoder, "Multiple decoded frames... dropping");
++      vpx_img_free (img);
++    }
++  } else {
++    /* Invisible frame */
++    gst_base_video_decoder_skip_frame (decoder, frame);
++  }
++
++  return ret;
++}
++
++#endif /* HAVE_VP9_DECODER */
+diff --git a/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/plugin.c b/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/plugin.c
+index 87cbe06..60f83d3 100644
+--- a/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/plugin.c
++++ b/platforms/media_backends/gst/gst-opera/gst-plugins-bad/ext/vp8/plugin.c
+@@ -30,6 +30,9 @@
+ GType gst_vp8_dec_get_type (void);
+ GType gst_vp8_enc_get_type (void);
+ 
++GType gst_vp9_dec_get_type (void);
++GType gst_vp9_enc_get_type (void);
++
+ static gboolean
+ plugin_init (GstPlugin * plugin)
+ {
+@@ -46,6 +49,16 @@ plugin_init (GstPlugin * plugin)
+       gst_vp8_enc_get_type ());
+ #endif
+ 
++#ifdef HAVE_VP9_DECODER
++  gst_element_register (plugin, "opera_vp9dec", GST_RANK_PRIMARY + 1,
++      gst_vp9_dec_get_type ());
++#endif
++
++#ifdef HAVE_VP9_ENCODER
++  gst_element_register (plugin, "vp9enc", GST_RANK_PRIMARY,
++      gst_vp9_enc_get_type ());
++#endif
++
+   return TRUE;
+ }
+ 
+diff --git a/platforms/media_backends/gst/gst-opera/gst-plugins-good/gst/matroska/matroska-demux.c b/platforms/media_backends/gst/gst-opera/gst-plugins-good/gst/matroska/matroska-demux.c
+index f532df1..897c348 100644
+--- a/platforms/media_backends/gst/gst-opera/gst-plugins-good/gst/matroska/matroska-demux.c
++++ b/platforms/media_backends/gst/gst-opera/gst-plugins-good/gst/matroska/matroska-demux.c
+@@ -6718,6 +6718,9 @@ gst_matroska_demux_video_caps (GstMatroskaTrackVideoContext *
+   } else if (!strcmp (codec_id, GST_MATROSKA_CODEC_ID_VIDEO_VP8)) {
+     caps = gst_caps_new_simple ("video/x-vp8", NULL);
+     *codec_name = g_strdup_printf ("On2 VP8");
++  } else if (!strcmp (codec_id, GST_MATROSKA_CODEC_ID_VIDEO_VP9)) {
++    caps = gst_caps_new_simple ("video/x-vp9", NULL);
++    *codec_name = g_strdup_printf ("On2 VP9");
+   } else {
+     GST_WARNING ("Unknown codec '%s', cannot build Caps", codec_id);
+     return NULL;
+diff --git a/platforms/media_backends/gst/gst-opera/gst-plugins-good/gst/matroska/matroska-ids.h b/platforms/media_backends/gst/gst-opera/gst-plugins-good/gst/matroska/matroska-ids.h
+index 2d31a45..bbd42f1 100644
+--- a/platforms/media_backends/gst/gst-opera/gst-plugins-good/gst/matroska/matroska-ids.h
++++ b/platforms/media_backends/gst/gst-opera/gst-plugins-good/gst/matroska/matroska-ids.h
+@@ -345,6 +345,7 @@
+ #define GST_MATROSKA_CODEC_ID_VIDEO_SNOW         "V_SNOW"
+ #define GST_MATROSKA_CODEC_ID_VIDEO_DIRAC        "V_DIRAC"
+ #define GST_MATROSKA_CODEC_ID_VIDEO_VP8          "V_VP8"
++#define GST_MATROSKA_CODEC_ID_VIDEO_VP9          "V_VP9"
+ 
+ #define GST_MATROSKA_CODEC_ID_AUDIO_MPEG1_L1       "A_MPEG/L1"
+ #define GST_MATROSKA_CODEC_ID_AUDIO_MPEG1_L2       "A_MPEG/L2"
+diff --git a/platforms/media_backends/gst/gst-opera/unix/Makefile b/platforms/media_backends/gst/gst-opera/unix/Makefile
+index d061621..f5d1905 100644
+--- a/platforms/media_backends/gst/gst-opera/unix/Makefile
++++ b/platforms/media_backends/gst/gst-opera/unix/Makefile
+@@ -46,10 +46,11 @@ $(GStreamerOutputDir)/libgstoperamatroska.so: $(GST_MATROSKA_SOURCES)
+ GST_VP8_SOURCES = \
+ 	$(GStreamerSourceDir)/gst-plugins-bad/ext/vp8/plugin.c \
+ 	$(GStreamerSourceDir)/gst-plugins-bad/ext/vp8/gstvp8dec.c \
++	$(GStreamerSourceDir)/gst-plugins-bad/ext/vp8/gstvp8lib.c \
+ 	$(GStreamerSourceDir)/gst-plugins-bad/ext/vp8/gstvp8utils.c \
+-	$(GStreamerSourceDir)/gst-plugins-bad/ext/vp8/gstvp8lib.c
++	$(GStreamerSourceDir)/gst-plugins-bad/ext/vp8/gstvp9dec.c
+ 
+-GST_VP8_CFLAGS = -DHAVE_VP8_DECODER
++GST_VP8_CFLAGS = -DHAVE_VP8_DECODER -DHAVE_VP9_DECODER
+ 
+ GST_BASE_VIDEO_SOURCES = \
+ 	$(GStreamerSourceDir)/gst-plugins-bad/gst-libs/gst/video/gstbasevideocodec.c \
+diff --git a/platforms/media_backends/gst/gstlibvpx.c b/platforms/media_backends/gst/gstlibvpx.c
+index 5718552..db33827 100644
+--- a/platforms/media_backends/gst/gstlibvpx.c
++++ b/platforms/media_backends/gst/gstlibvpx.c
+@@ -51,6 +51,7 @@ gstlibvpx_function_table()
+ 	t.vpx_codec_peek_stream_info = (void*)&vpx_codec_peek_stream_info;
+ 	t.vpx_codec_control_ = (void*)&vpx_codec_control_;
+ 	t.vpx_codec_vp8_dx = (void*)&vpx_codec_vp8_dx;
++	t.vpx_codec_vp9_dx = (void*)&vpx_codec_vp9_dx;
+ 
+ 	return t;
+ }
+diff --git a/platforms/media_backends/gst/gstlibvpx.h b/platforms/media_backends/gst/gstlibvpx.h
+index 109ee9e..fb56386 100644
+--- a/platforms/media_backends/gst/gstlibvpx.h
++++ b/platforms/media_backends/gst/gstlibvpx.h
+@@ -38,6 +38,7 @@ typedef struct gstlibvpx_ft_
+ 	void *vpx_codec_peek_stream_info;
+ 	void *vpx_codec_control_;
+ 	void *vpx_codec_vp8_dx;
++	void *vpx_codec_vp9_dx;
+ } gstlibvpx_ft;
+ 
+ /** @return An initialized table of libvpx functions. */
+diff --git a/platforms/media_backends/gst/gstmediamanager.cpp b/platforms/media_backends/gst/gstmediamanager.cpp
+index 6dda566..a83073b 100644
+--- a/platforms/media_backends/gst/gstmediamanager.cpp
++++ b/platforms/media_backends/gst/gstmediamanager.cpp
+@@ -125,6 +125,7 @@ InitVPXDecoder(GModule *module)
+ 	INIT_LIBVPX_SYMBOL(vpx_codec_peek_stream_info);
+ 	INIT_LIBVPX_SYMBOL(vpx_codec_control_);
+ 	INIT_LIBVPX_SYMBOL(vpx_codec_vp8_dx);
++	INIT_LIBVPX_SYMBOL(vpx_codec_vp9_dx);
+ 
+ 	#undef INIT_LIBVPX_SYMBOL
+ 
+@@ -304,6 +305,7 @@ demuxer_decoder_filter(GstPluginFeature *feature, gpointer use_data)
+ #define CODECS_VORBIS    0x02 // "vorbis"
+ #define CODECS_THEORA    0x04 // "theora"
+ #define CODECS_VP8       0x08 // "vp8" or "vp8.0"
++#define CODECS_VP9       0x10 // "vp9" or "vp9.0"
+ 
+ static BOOL
+ gst_op_map_type(const char *type, const char *&caps_type, UINT32 &codec_flags)
+@@ -339,7 +341,7 @@ gst_op_map_type(const char *type, const char *&caps_type, UINT32 &codec_flags)
+ 	{
+ 		// WebM
+ 		caps_type = "video/webm";
+-		codec_flags = CODECS_VORBIS | CODECS_VP8;
++		codec_flags = CODECS_VORBIS | CODECS_VP8 | CODECS_VP9;
+ 	}
+ 	else if (is_audio && (op_strcmp(subtype, "wav") == 0 ||
+ 						  op_strcmp(subtype, "wave") == 0 ||
+@@ -400,6 +402,9 @@ gst_op_can_play_codec(GstCaps *&caps, const char *codec, UINT32 flags)
+ 	else if (flags & CODECS_VP8 && (op_strcmp(codec, "vp8") == 0 ||
+ 									op_strcmp(codec, "vp8.0") == 0))
+ 		caps = gst_caps_new_simple("video/x-vp8", NULL);
++	else if (flags & CODECS_VP9 && (op_strcmp(codec, "vp9") == 0 ||
++									op_strcmp(codec, "vp9.0") == 0))
++		caps = gst_caps_new_simple("video/x-vp9", NULL);
+ 
+ 	return caps ? MAYBE : NO;
+ }

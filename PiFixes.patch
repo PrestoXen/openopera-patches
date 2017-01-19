@@ -1,0 +1,100 @@
+diff --git a/adjunct/bittorrent/bt-upload.cpp b/adjunct/bittorrent/bt-upload.cpp
+index b748be6..c1587ae 100644
+--- a/adjunct/bittorrent/bt-upload.cpp
++++ b/adjunct/bittorrent/bt-upload.cpp
+@@ -517,14 +517,14 @@ OpByteBuffer *UploadTransferBT::OnRequest(BTPacket* packet)
+ 		DEBUGTRACE_UP(UNI_L("ILLEGAL length: %d\n"), length);
+ 		// error, too large request
+ 		Close();
+-		return FALSE;
++		return NULL;
+ 	}
+ 	if(offset + length > m_filesize )
+ 	{
+ 		DEBUGTRACE_UP(UNI_L("ILLEGAL size: %d\n"), offset + length);
+ 		// error, size larger than file
+ 		Close();
+-		return FALSE;
++		return NULL;
+ 	}
+ 
+ 	for(P2PFilePart* fragment = m_requested ; fragment != NULL; fragment = fragment->m_next )
+diff --git a/adjunct/bittorrent/connection.cpp b/adjunct/bittorrent/connection.cpp
+index f79bf93..a0a9523 100644
+--- a/adjunct/bittorrent/connection.cpp
++++ b/adjunct/bittorrent/connection.cpp
+@@ -1551,7 +1551,7 @@ BTClientConnector *BTServerConnector::VerifyHandshake(OpByteBuffer& buffer, P2PS
+ 
+ 	if(buffer.DataSize() < 7)
+ 	{
+-		return FALSE;
++		return NULL;
+ 	}
+ 	// Check for BitTorrent handshake
+ 
+diff --git a/modules/liblcms/src/cmstypes.c b/modules/liblcms/src/cmstypes.c
+index c2d6f94..0e9d4e0 100644
+--- a/modules/liblcms/src/cmstypes.c
++++ b/modules/liblcms/src/cmstypes.c
+@@ -2368,9 +2368,9 @@ cmsStage* ReadSetOfCurves(struct _cms_typehandler_struct* self, cmsIOHANDLER* io
+     cmsUInt32Number i;
+     cmsStage* Lin = NULL;
+ 
+-    if (nCurves > cmsMAXCHANNELS) return FALSE;
++    if (nCurves > cmsMAXCHANNELS) return NULL;
+ 
+-    if (!io -> Seek(io, Offset)) return FALSE;
++    if (!io -> Seek(io, Offset)) return NULL;
+ 
+     for (i=0; i < nCurves; i++) 
+         Curves[i] = NULL;
+@@ -5082,7 +5082,7 @@ void *Type_Dictionary_Read(struct _cms_typehandler_struct* self, cmsIOHANDLER* i
+         if (DisplayNameMLU != NULL) cmsMLUfree(DisplayNameMLU);
+         if (DisplayValueMLU != NULL) cmsMLUfree(DisplayValueMLU);
+ 
+-        if (!rc) return FALSE;
++        if (!rc) return NULL;
+     }
+ 
+    FreeArray(&a);   
+diff --git a/platforms/quix/module.build/autoupdatechecker.conf.py b/platforms/quix/module.build/autoupdatechecker.conf.py
+index 340e0e6..b6d9b9b 100644
+--- a/platforms/quix/module.build/autoupdatechecker.conf.py
++++ b/platforms/quix/module.build/autoupdatechecker.conf.py
+@@ -9,7 +9,7 @@ def libraries(binary='opera'):
+     if binary == 'opera_autoupdatechecker':
+         # Use system libs
+         libs.append(util.PkgConfig('sqlite3'))
+-        libs.append(util.PkgConfig('tinyxml', static=True))
++        libs.append(util.PkgConfig('tinyxml'))
+         libs.append(util.PkgConfig('libcurl'))
+     return libs
+ 
+diff --git a/platforms/unix/base/x11/x11_globals.h b/platforms/unix/base/x11/x11_globals.h
+index 7511001..933d72b 100644
+--- a/platforms/unix/base/x11/x11_globals.h
++++ b/platforms/unix/base/x11/x11_globals.h
+@@ -33,7 +33,7 @@ public:
+ 		:visual(0)
+ 		,id(None)
+ 		,colormap(None)
+-		,fbconfig(None)
++		,fbconfig(NULL)
+ 		,depth(0)
+ 		,image_bpp(0)
+ 		,r_mask(0)
+diff --git a/platforms/unix/base/x11/x11_mdebuffer.cpp b/platforms/unix/base/x11/x11_mdebuffer.cpp
+index 5c13ea0..67e5da8 100644
+--- a/platforms/unix/base/x11/x11_mdebuffer.cpp
++++ b/platforms/unix/base/x11/x11_mdebuffer.cpp
+@@ -46,8 +46,8 @@ X11MdeBuffer::X11MdeBuffer(X11Types::Display *display,
+ 	,m_window(window)
+ 	,m_widget(g_x11->GetWidgetList()->FindWidget(window))
+ 	,m_visual(visual)
+-	,m_gc(None)
+-	,m_plugin_gc(None)
++	,m_gc(NULL)
++	,m_plugin_gc(NULL)
+ {
+ }
+ 

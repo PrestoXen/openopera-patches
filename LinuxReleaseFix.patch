@@ -1,0 +1,13 @@
+diff --git a/platforms/flower/module.build/00-gcc.conf.py b/platforms/flower/module.build/00-gcc.conf.py
+index ab24053..f61a260 100644
+--- a/platforms/flower/module.build/00-gcc.conf.py
++++ b/platforms/flower/module.build/00-gcc.conf.py
+@@ -77,7 +77,7 @@ class GCC(object):
+             if config.optimizeSize:
+                 flags += ['-Os', '-ffast-math', '-fno-unsafe-math-optimizations']
+             else:
+-                flags += ['-O3', '-fno-tree-vectorize'] # tree vectorization causes a crash fillRect
++                flags += ['-O3', '-fno-tree-vectorize', '-fno-strict-aliasing', '-fno-delete-null-pointer-checks'] # tree vectorization causes a crash fillRect
+             if config.LTO:
+                 flags += ['-flto=' + str(self.LTOJobs), '-fuse-linker-plugin', '-fno-fat-lto-objects']
+         return flags

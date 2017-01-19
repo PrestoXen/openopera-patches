@@ -1,0 +1,28 @@
+# OpenOpera Patches
+A collection of patches sourced from different places, unknown authors (if you want to claim ownership of one just create an issue)
+
+Feel free to make a pull request if you have anything to add or fix.
+
+You're also welcome to join the OpenOpera IRC: http://site.anonnet.org/webirc/openopera  
+Or join #openopera on crowley.anonnet.org:6697
+
+## Contents
+
+### General patches
+- **JSExecutionFix.patch**: patch to fix javascript execution errors when building with modern compilers (g++ 5.x+)
+- **FalseNullFix.patch**: patch to fix some FALSE->NULL errors
+- **VP9Fix.patch**: VP9 support patch (requires libvpx-1.3.0 (exactly)), no Windows support atm.
+
+### Linux/FreeBSD patches
+- **LinuxBuildFix.patch**: fixes some build issues on Linux
+- **LinuxReleaseFix.patch**: makes Linux release builds more stable
+- **PiInstructions.txt**: instructions on building for Raspberry Pi
+- **PiFixes.patch**: patches for building on Raspberry Pi
+- **ArmFixes.patch**: patches for building for ARM platform (needed for Pi)
+- **freebsd-11-gcc6.patch**: FreeBSD compiling patch by kandeshvari, [source](https://gist.github.com/kandeshvari/6e69327fb017ea95bced85c6f297a29f)
+
+### Windows patches
+- **VSInstructions.txt**: instructions for building with VS
+- **VS2015Fix.patch**: patch for building on VS2015 (adding soon)
+
+A full mirror of gst-opera (gstreamer code used by Opera) is also uploaded [here](http://www22.zippyshare.com/v/Wp1PrPRW/file.html), as the mirror on opensource.opera.com has a lot of issues when cloning.

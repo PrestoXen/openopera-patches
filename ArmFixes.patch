@@ -1,0 +1,148 @@
+diff --git a/modules/libgogi/pi_impl/mde_opfont.cpp b/modules/libgogi/pi_impl/mde_opfont.cpp
+index 44efd58..fb19e89 100644
+--- a/modules/libgogi/pi_impl/mde_opfont.cpp
++++ b/modules/libgogi/pi_impl/mde_opfont.cpp
+@@ -28,8 +28,8 @@
+ #   include "modules/libfreetype/include/freetype/ftoutln.h"
+ #  else // FT_INTERNAL_FREETYPE
+ #   include <ft2build.h>
+-#   include <freetype/ftglyph.h>
+-#   include <freetype/ftoutln.h>
++#   include <freetype2/ftglyph.h>
++#   include <freetype2/ftoutln.h>
+ #  endif // FT_INTERNAL_FREETYPE
+ # endif // MDF_FREETYPE_SUPPORT && MDEFONT_MODULE
+ # ifdef MDF_AGFA_SUPPORT
+diff --git a/modules/mdefont/mdf_freetype.cpp b/modules/mdefont/mdf_freetype.cpp
+index 1708581..a6e7e4f 100644
+--- a/modules/mdefont/mdf_freetype.cpp
++++ b/modules/mdefont/mdf_freetype.cpp
+@@ -23,10 +23,10 @@
+ # include "modules/libfreetype/include/freetype/ftsnames.h"
+ #else // FT_INTERNAL_FREETYPE
+ # include <ft2build.h>
+-# include <freetype/tttables.h>
+-# include <freetype/ftoutln.h>
+-# include <freetype/ttnameid.h>
+-# include <freetype/ftsnames.h>
++# include <freetype2/tttables.h>
++# include <freetype2/ftoutln.h>
++# include <freetype2/ttnameid.h>
++# include <freetype2/ftsnames.h>
+ #endif // FT_INTERNAL_FREETYPE
+ 
+ #include FT_FREETYPE_H
+@@ -39,7 +39,7 @@
+ # ifdef FT_INTERNAL_FREETYPE
+ #  include "modules/libfreetype/include/freetype/ftlcdfil.h"
+ # else // FT_INTERNAL_FREETYPE
+-#  include <freetype/ftlcdfil.h>
++#  include <freetype2/ftlcdfil.h>
+ # endif // FT_INTERNAL_FREETYPE
+ #endif // FT_USE_SMOOTH_LCD_RENDERING || FT_USE_SMOOTH_LCDV_RENDERING
+ 
+diff --git a/platforms/crashlog/src/crashlog_linux32.cpp b/platforms/crashlog/src/crashlog_linux32.cpp
+index c171961..8a21f5c 100644
+--- a/platforms/crashlog/src/crashlog_linux32.cpp
++++ b/platforms/crashlog/src/crashlog_linux32.cpp
+@@ -9,7 +9,7 @@
+ 
+ #include "core/pch.h"
+ 
+-#if defined(__linux__) && defined(i386)
++#if defined(__linux__) && (defined(i386) || defined(__arm__))
+ 
+ #include "platforms/crashlog/crashlog.h"
+ #include "platforms/crashlog/gpu_info.h"
+@@ -352,6 +352,7 @@ bool GetGpuInfo(pid_t pid, GpuInfo * gpu_info, GpuInfo * ret_gpudata)
+ 
+ void WriteCrashlog(pid_t pid, GpuInfo * gpu_info, char* log_filename, int log_filename_size, const char* location)
+ {
++#if !defined(__arm__)
+ 	int status;
+ 	UINT i;
+ 	const char *signame = NULL;
+@@ -710,6 +711,7 @@ void WriteCrashlog(pid_t pid, GpuInfo * gpu_info, char* log_filename, int log_fi
+ 
+ 	ptrace(PT_KILL, pid, 0, 0);
+ 	waitpid(pid, &status, 0);
++#endif
+ }
+ 
+ #endif // defined(__linux__) && defined(i386)
+diff --git a/platforms/quix/desktop_pi_impl/unix_opautoupdate.cpp b/platforms/quix/desktop_pi_impl/unix_opautoupdate.cpp
+index 473c488..3ce03fd 100644
+--- a/platforms/quix/desktop_pi_impl/unix_opautoupdate.cpp
++++ b/platforms/quix/desktop_pi_impl/unix_opautoupdate.cpp
+@@ -57,6 +57,8 @@ OP_STATUS UnixOpAutoUpdate::GetArchitecture(OpString& arch)
+ 	return arch.Set("sparc");
+ #elif defined(__PPC__)
+ 	return arch.Set("ppc");
++#elif defined(__arm__)
++	return arch.Set("arm");
+ #else
+ #error "Fix me: unsupported architecture"
+ 	return OpStatus::ERR;
+diff --git a/platforms/quix/module.build/gcc.conf.py b/platforms/quix/module.build/gcc.conf.py
+index 1970335..4e027db 100644
+--- a/platforms/quix/module.build/gcc.conf.py
++++ b/platforms/quix/module.build/gcc.conf.py
+@@ -3,7 +3,7 @@ class GCC(default.GCC):
+ 
+     def codeFlags(self):
+         flags = super(GCC, self).codeFlags
+-        if config.targetPlatform.wordsize == 32:
+-            flags += ['-march=i686', '-mtune=generic']
++#        if config.targetPlatform.wordsize == 32:
++#            flags += ['-march=i686', '-mtune=generic']
+             # We stick with the default (-march=x86-64) for 64-bit
+         return flags
+diff --git a/platforms/unix/base/common/unix_opsysteminfo.cpp b/platforms/unix/base/common/unix_opsysteminfo.cpp
+index 522714b..7680f27 100644
+--- a/platforms/unix/base/common/unix_opsysteminfo.cpp
++++ b/platforms/unix/base/common/unix_opsysteminfo.cpp
+@@ -791,43 +791,7 @@ uni_char* UnixOpSystemInfo::SerializeFileName(const uni_char *path)
+ #ifdef OPSYSTEMINFO_CPU_FEATURES
+ unsigned int UnixOpSystemInfo::GetCPUFeatures()
+ {
+-	int ecx = 0, edx = 0;
+-	unsigned result = 0;
+-	const int SSE2_MASK = 0x4000000; // sse2 capability is written on the 27th bit of edx
+-	const int SSE3_MASK = 1; // // sse3 capability is written on the first bit of ecx
+-	const int SSSE3_MASK = 0x200; // // ssse3 capability is written on the 10th bit of ecx
+-
+-
+-	asm ("mov $1, %%eax\n\t"
+-#ifndef SIXTY_FOUR_BIT
+-		"pushl %%ebx\n\t"
+-#endif
+-		"cpuid\n\t"
+-#ifndef SIXTY_FOUR_BIT
+-		"popl %%ebx\n\t"
+-#endif
+-		: "=c"(ecx), "=d"(edx)
+-		:
+-		 :"%eax"
+-#ifdef SIXTY_FOUR_BIT
+-		  , "%ebx"
+-#endif
+-);
+-
+-	if (ecx & SSE3_MASK)
+-	{
+-		result |= CPU_FEATURES_IA32_SSE3;
+-	}
+-	if (ecx & SSSE3_MASK)
+-	{
+-		result |= CPU_FEATURES_IA32_SSSE3;
+-	}
+-	if (edx & SSE2_MASK)
+-	{
+-		result |= CPU_FEATURES_IA32_SSE2;
+-	}
+-
+-	return result;
++	return CPU_FEATURES_NONE;
+ }
+ #endif // OPSYSTEMINFO_CPU_FEATURES
+ 

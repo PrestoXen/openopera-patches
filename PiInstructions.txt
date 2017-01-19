@@ -1,0 +1,11 @@
+up. Sooo... I've succesfully built this shit for raspberry pi (because why not)
+Deps: libfontconfig1-dev libtinyxml-dev libxrender-dev libgstreamer-plugins-base0.10-dev libgtk2.0-dev libcups2-dev libfreetype6-dev libsqlite3-dev libxml-twig-perl zip
+
+Patches:
+Build patch (was mentioned before): https://paste.fedoraproject.org/527758/03599148
+Arm patch: https://paste.fedoraproject.org/527759/45036061
+
+Build command: 
+./flower -v -j 1 --without-kde4 --without-gtk3 --without-plugins --without-dual-plugin-wrapper --no-debug-symbols --optimize --without-autoupdatechecker --no-package-devel --release --package=tar
+
+You'll also need 1-2 GB swap if building on real hardware, or build will fail.

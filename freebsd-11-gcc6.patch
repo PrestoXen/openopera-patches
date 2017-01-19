@@ -1,0 +1,66 @@
+diff --git a/platforms/unix/base/common/unix_camera.h b/platforms/unix/base/common/unix_camera.h
+index 3b747450..4380efa2 100644
+--- a/platforms/unix/base/common/unix_camera.h
++++ b/platforms/unix/base/common/unix_camera.h
+@@ -15,7 +15,15 @@
+ #include "modules/img/image.h"
+ #include "platforms/posix/posix_selector.h"
+ 
++#ifdef __FreeBSD__
++typedef uint32_t        __u32;
++typedef int32_t        __s32;
++typedef uint8_t        __u8;
++typedef uint16_t        __u16;
++#include <v4l/videodev2.h>
++#else
+ #include <linux/videodev2.h>
++#endif
+ 
+ class OpBitmap;
+ class UnixOpCamera;
+@@ -27,7 +35,7 @@ class UnixOpCameraManager
+ #endif // __FreeBSD__
+ {
+ public:
+-#ifndef __FreeBSD__	
++#ifndef __FreeBSD__
+ 	static const int MAX_NL_MSG_LEN = 256;
+ 	static const int NETLINK_MONITOR_KERNEL_GROUP = 1;
+ #endif // __FreeBSD__
+diff --git a/platforms/flower/module.build/00-gcc.conf.py b/platforms/flower/module.build/00-gcc.conf.py
+index ab24053a..d235fa70 100644
+--- a/platforms/flower/module.build/00-gcc.conf.py
++++ b/platforms/flower/module.build/00-gcc.conf.py
+@@ -46,7 +46,7 @@ class GCC(object):
+     def codeFlags(self, lang=None, pgo=None):
+         flags = ['-fshort-wchar', '-fsigned-char']
+         if lang == 'c++':
+-            flags += ['-fno-threadsafe-statics', '-fno-exceptions', '-fno-rtti']
++            flags += ['-fno-threadsafe-statics', '-fno-exceptions', '-fno-rtti', '-fno-delete-null-pointer-checks']
+         if config.buildSharedLibrary:
+             flags += ['-fpic']
+         if pgo:
+@@ -73,7 +73,7 @@ class GCC(object):
+         if config.optimize:
+             flags += ['-ffunction-sections', '-fdata-sections']
+             if self.role == 'linker':
+-                flags += ['-Wl,--gc-sections']
++                flags += ['-Wl,--gc-sections,-rpath=/usr/local/lib/gcc6']
+             if config.optimizeSize:
+                 flags += ['-Os', '-ffast-math', '-fno-unsafe-math-optimizations']
+             else:
+diff --git a/platforms/flower/module.build/compile.flow.py b/platforms/flower/module.build/compile.flow.py
+index f654ac3c..e833252c 100644
+--- a/platforms/flower/module.build/compile.flow.py
++++ b/platforms/flower/module.build/compile.flow.py
+@@ -108,8 +108,8 @@ def compileSource(self, source, binary, pgo, lang, stem, pch):
+     compiler = config.targetPlatform.compiler
+     self['target'] = compiler.target
+     deps = []
+-    if pch != 'nopch' and compiler.supportsPrecompiledHeaders:
+-        deps.append(precompiledHeader(stem=pch, binary=binary, lang=lang))
++#    if pch != 'nopch' and compiler.supportsPrecompiledHeaders:
++#        deps.append(precompiledHeader(stem=pch, binary=binary, lang=lang))
+     if pgo == 'use':
+         deps.append(PGODataFile(source=source, binary=binary))
+     yield [sourceSetup()] + deps

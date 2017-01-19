@@ -1,0 +1,47 @@
+Requirements:
+- VS2010 with Service Pack 1 or VS2015 (VS2010 is more stable atm)
+- vsyasm 1.2.0 (NOT 1.3.0 - it has a major bug regarding capitalization of the string 'Win32', 1.2.0 doesn't have this issue though - make sure to read the readme to see how to install it)
+- Python 2.7 (make sure its added to your PATH)
+- Perl 5 (ditto above)
+- 7zip (add the 7zip install folder to your PATH)
+- Pike 7.8.352 (might be hard to find, I got it by searching for "pike-v7.8.352-win32.msi")
+- Also make sure you add Pikes bin folder to your systems PATH manually, the installer won't do it
+(these can all be found here: https://mega.nz/#F!epZjXIwY!_Dj6Em3cnAMEojKRMNS3MQ except for 7zip)
+
+Make sure you've installed and followed all the steps above, if you've forgotten even a single one the build will fail. You should also be working from the original non-patched source, the zip with a SHA256 of 441DD20E7B44407F4AEC8295AF170302DE5C2AEDC9E46083ED4C3B1497558CE2 is a known good source.
+
+Open a command prompt at the root of the opera source, and run the following commands to generate all the source files (edit the <PATH-TO-SOURCE-ROOT> in the first line to the full path to the source's root)
+
+   python modules/hardcore/scripts/operasetup.py -I<PATH-TO-SOURCE-ROOT> -DMSWIN=1 -DSELFTEST=1 --platform_product_config=platforms/windows/config.h --makelang_db=data/strings/english.db --makelang_db=adjunct/quick/english_local.db --makelang_opt=-E --mainline_configuration=current
+
+(above command might error at the end about a pch.h file, just ignore it)
+
+   python modules/hardcore/scripts/sourcessetup.py --ignore-missing-sources
+
+   python platforms/windows/vcxproj_update.py
+
+Note: I'm not sure if these are the 'proper' commands you're meant to use, but running these worked for me and generated all the files needed to build, YMMV
+
+== VS2010
+ 
+Once all of those have completed open up VS2010 and then open the platforms/windows/Opera_vs2010.sln file (you have to open it from inside VS2010, double clicking the sln file didn't seem to work for me) and then choose your build type, platform, and hit build!
+
+Some projects might error because libcurl isn't included with the source, but those aren't critical Opera projects, so don't worry about it :)
+
+After the build has completed you should end up with a full Opera install in the Release/Debug folders.
+
+If you installed 7zip and added it to your PATH the skin files will also be built, otherwise you'll need to copy these from an existing 12.15 install.
+
+== VS2015
+
+Follow the VS2010 section above, and allow VS2015 to convert the project.
+
+It should build fine with no errors for 32 bit builds, currently only Release builds will build for x64 however.
+
+To fix issues with CSS on x64 builds:
+- right click the 'desktop_starter' project file, open properties
+- go to Linker -> Advanced
+- set 'Randomized Base Address' to 'No (/DYNAMICBASE:NO)'
+- set 'Fixed Base Address' to 'Yes (/FIXED)'.
+
+Unsure why this is needed, but without it CSS might be broken on some sites. If you find a proper fix for this please let us know at https://github.com/PrestoXen/openopera-issues/issues/10!

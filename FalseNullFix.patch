@@ -1,0 +1,22 @@
+diff --git a/modules/spellchecker/hunspell_3p/src/hunspell/affentry.h b/modules/spellchecker/hunspell_3p/src/hunspell/affentry.h
+index 53fdd25..b212dbc 100644
+--- a/modules/spellchecker/hunspell_3p/src/hunspell/affentry.h
++++ b/modules/spellchecker/hunspell_3p/src/hunspell/affentry.h
+@@ -27,7 +27,7 @@ public:
+   struct hentry *      checkword(const char * word, int len, char in_compound, 
+                             const FLAG needflag = FLAG_NULL);
+ 
+-  struct hentry *      check_twosfx(const char * word, int len, char in_compound, const FLAG needflag = NULL);
++  struct hentry *      check_twosfx(const char * word, int len, char in_compound, const FLAG needflag = FLAG_NULL);
+ 
+ #ifdef MORPHOLOGICAL_FUNCTIONS
+   char *      check_morph(const char * word, int len, char in_compound,
+@@ -92,7 +92,7 @@ public:
+ //                    const FLAG cclass = FLAG_NULL, const FLAG needflag = FLAG_NULL, char in_compound=IN_CPD_NOT);
+                     const FLAG cclass = FLAG_NULL, const FLAG needflag = FLAG_NULL, const FLAG badflag = 0);
+ 
+-  struct hentry *   check_twosfx(const char * word, int len, int optflags, PfxEntry* ppfx, const FLAG needflag = NULL);
++  struct hentry *   check_twosfx(const char * word, int len, int optflags, PfxEntry* ppfx, const FLAG needflag = FLAG_NULL);
+ 
+   char *      check_twosfx_morph(const char * word, int len, int optflags,
+                  PfxEntry* ppfx, const FLAG needflag = FLAG_NULL);
