@@ -1,0 +1,33 @@
+diff --git a/modules/hardcore/features/features.txt b/modules/hardcore/features/features.txt
+index 8cd5be4..a87c991 100644
+--- a/modules/hardcore/features/features.txt
++++ b/modules/hardcore/features/features.txt
+@@ -3200,8 +3200,8 @@ FEATURE_MANUAL_PLUGIN_ACTIVATION			pettern
+ 	Defines     : MANUAL_PLUGIN_ACTIVATION
+ 	Depends on  : FEATURE_PLUGIN
+ 	Required by : nothing
+-	Enabled for : desktop, smartphone, tv
+-	Disabled for: minimal, mini
++	Enabled for : smartphone, tv
++	Disabled for: desktop, minimal, mini
+ 
+ FEATURE_TRUST_RATING						jonnyr
+ 
+diff --git a/modules/layout/content/content.cpp b/modules/layout/content/content.cpp
+index 829e6b2..3f004cb 100644
+--- a/modules/layout/content/content.cpp
++++ b/modules/layout/content/content.cpp
+@@ -8935,8 +8935,11 @@ EmbedContent::Paint(LayoutProperties* layout_props, FramesDocument* doc, VisualD
+ #ifdef USE_PLUGIN_EVENT_API
+ # ifdef SUPPORT_VISUAL_ADBLOCK
+ 			if (OpPluginWindow* plugin_window = opns4plugin->GetPluginWindow())
+-				plugin_window->BlockMouseInput(doc->GetWindow()->GetContentBlockEditMode() ||
+-											   !html_element->GetPluginExternal() && !html_element->GetPluginActivated());
++				plugin_window->BlockMouseInput(doc->GetWindow()->GetContentBlockEditMode()
++#ifdef MANUAL_PLUGIN_ACTIVATION
++					   || (!html_element->GetPluginExternal() && !html_element->GetPluginActivated())
++#endif
++				);
+ # endif // SUPPORT_VISUAL_ADBLOCK
+ 
+ 			OpRect plugin_rect((INT32)x, (INT32)y, (INT32)width, (INT32)height);
