@@ -1,0 +1,155 @@
+From b4bc7aae23505bee1f2879c44f2fb727e76c36c0 Mon Sep 17 00:00:00 2001
+From: anonymous <anonymous@example.com>
+Date: Sat, 21 Jan 2017 02:15:20 +0200
+Subject: [PATCH] TWEAK_LOGDOC_LOAD_IMAGES_FROM_PARSER turned into two
+ preferences
+
+---
+ modules/logdoc/module.tweaks                      | 22 ++++++++++++++++++----
+ modules/logdoc/src/htm_elm.cpp                    | 13 ++++++++-----
+ modules/logdoc/src/htm_ldoc.cpp                   | 23 +++++++++++++++++------
+ modules/prefs/prefsmanager/collections/pc_doc.txt | 16 ++++++++++++++++
+ 4 files changed, 59 insertions(+), 15 deletions(-)
+
+diff --git a/modules/logdoc/module.tweaks b/modules/logdoc/module.tweaks
+index b4a7738..03d6158 100644
+--- a/modules/logdoc/module.tweaks
++++ b/modules/logdoc/module.tweaks
+@@ -349,7 +349,7 @@ TWEAK_LOGDOC_IGNORE_SCHEMES_WITH_TABS_OR_NEW_LINES	pstanek
+ 	Enabled for : minimal
+ 	Disabled for : smartphone, desktop, tv, mini
+ 
+-TWEAK_LOGDOC_LOAD_IMAGES_FROM_PARSER		  pstanek
++TWEAK_LOGDOC_LOAD_IMAGES_FROM_PARSER_DEFAULT  anonymous
+ 
+ 	Moves images loading from the layout to the parser.
+ 	This may cause more images will be loaded (even the ones which are hidden)
+@@ -357,9 +357,23 @@ TWEAK_LOGDOC_LOAD_IMAGES_FROM_PARSER		  pstanek
+ 	May have also impact on loading performace.
+ 
+ 	Category    : performance
+-	Define		: LOGDOC_LOAD_IMAGES_FROM_PARSER
+-	Enabled for : desktop, tv, mini
+-	Disabled for: smartphone, minimal
++	Define      : DEFAULT_LOGDOC_LOAD_IMAGES_FROM_PARSER
++	Value       : FALSE
++	Value for desktop, tv, smartphone, minimal: FALSE
++	Value for mini: TRUE
++
++TWEAK_LOGDOC_LOAD_IMAGES_FROM_PARSER_FOR_CANVAS_DEFAULT  anonymous
++
++	Moves images loading from the layout to the parser if canvas support is
++	turned on. This may cause more images will be loaded (even the ones which
++	are hidden) but will reduce page compatibility problems.
++	May have also impact on loading performace.
++
++	Category    : performance
++	Define      : DEFAULT_LOGDOC_LOAD_IMAGES_FROM_PARSER_FOR_CANVAS
++	Value       : FALSE
++	Value for desktop, tv, smartphone, minimal: FALSE
++	Value for mini: TRUE
+ 
+ TWEAK_LOGDOC_INCREASE_FONTSIZE_QUIRK		deprecated
+ 
+diff --git a/modules/logdoc/src/htm_elm.cpp b/modules/logdoc/src/htm_elm.cpp
+index 59c3783..59aa720 100644
+--- a/modules/logdoc/src/htm_elm.cpp
++++ b/modules/logdoc/src/htm_elm.cpp
+@@ -17138,14 +17138,17 @@ HTML_Element::GetUrlAttr(short attr, int ns_idx/*=NS_IDX_HTML*/, LogicalDocument
+ 	}
+ #endif // WEB_TURBO_MODE
+ 
+-#if defined LOGDOC_LOAD_IMAGES_FROM_PARSER && defined _WML_SUPPORT_
++#if defined _WML_SUPPORT_
+ 	/* In WML images may have attribute set to some variable. Moreover variable value may be set later than during parsing - e.g. by the timer - so
+ 	 * in such a case, if URL can not be resolved, do not cache it.
+ 	 */
+-	if (logdoc && Type() == HE_IMG && ret_url.IsEmpty() && logdoc->GetHLDocProfile()->IsWml() && logdoc->GetHLDocProfile()->HasWmlContent() &&
+-		logdoc->GetHLDocProfile()->WMLGetContext()->NeedSubstitution(url_str, uni_strlen(url_str)))
+-		return NULL;
+-#endif // LOGDOC_LOAD_IMAGES_FROM_PARSER && _WML_SUPPORT_
++	if (g_pcdoc->GetIntegerPref(PrefsCollectionDoc::LoadImagesFromParser))
++	{
++		if (logdoc && Type() == HE_IMG && ret_url.IsEmpty() && logdoc->GetHLDocProfile()->IsWml() && logdoc->GetHLDocProfile()->HasWmlContent() &&
++			logdoc->GetHLDocProfile()->WMLGetContext()->NeedSubstitution(url_str, uni_strlen(url_str)))
++			return NULL;
++	}
++#endif // _WML_SUPPORT_
+ 
+ 	if (OpStatus::IsMemoryError(url_attr->SetResolvedUrl(ret_url)))
+ 		return NULL;
+diff --git a/modules/logdoc/src/htm_ldoc.cpp b/modules/logdoc/src/htm_ldoc.cpp
+index 9563159..c6985e8 100644
+--- a/modules/logdoc/src/htm_ldoc.cpp
++++ b/modules/logdoc/src/htm_ldoc.cpp
+@@ -2270,8 +2270,7 @@ HLDocProfile::InsertElementInternal(HTML_Element *parent, HTML_Element *new_elm,
+ 					SetIsOutOfMemory(TRUE);
+ 			}
+ 
+-#ifdef LOGDOC_LOAD_IMAGES_FROM_PARSER
+-			else if (new_elm->GetInputType() == INPUT_IMAGE)
++			else if (g_pcdoc->GetIntegerPref(PrefsCollectionDoc::LoadImagesFromParser) && new_elm->GetInputType() == INPUT_IMAGE)
+ 			{
+ 				URL inline_url = new_elm->GetImageURL(FALSE, GetLogicalDocument());
+ 
+@@ -2282,7 +2281,6 @@ HLDocProfile::InsertElementInternal(HTML_Element *parent, HTML_Element *new_elm,
+ 					SetIsOutOfMemory(TRUE);
+ 				}
+ 			}
+-#endif // LOGDOC_LOAD_IMAGES_FROM_PARSER
+ 
+ 			SetElementNumberWithinForm(this, new_elm);
+ 			SetElementFormNumber(this, new_elm);
+@@ -2336,9 +2334,22 @@ HLDocProfile::InsertElementInternal(HTML_Element *parent, HTML_Element *new_elm,
+ 		case HE_IMG:
+ 		{
+ 			SetElementFormNumber(this, new_elm);
+-#if !defined(LOGDOC_LOAD_IMAGES_FROM_PARSER) && !defined(CANVAS_SUPPORT)
+-			if ((new_elm->HasAttr(ATTR_ONLOAD) || new_elm->HasAttr(ATTR_ONERROR)) && !new_elm->GetHEListElmForInline(IMAGE_INLINE))
+-#endif // !LOGDOC_LOAD_IMAGES_FROM_PARSER && !CANVAS_SUPPORT
++			bool doLoadImgNow = false;
++#if defined(CANVAS_SUPPORT)
++			doLoadImgNow = g_pcdoc->GetIntegerPref(PrefsCollectionDoc::AlwaysLoadImagesFromParserForCanvas);
++#endif
++			if (!g_pcdoc->GetIntegerPref(PrefsCollectionDoc::LoadImagesFromParser))
++			{
++				doLoadImgNow = doLoadImgNow || ((new_elm->HasAttr(ATTR_ONLOAD) || new_elm->HasAttr(ATTR_ONERROR)) && !new_elm->GetHEListElmForInline(IMAGE_INLINE));
++			}
++			else
++			{
++				doLoadImgNow = true;
++			}
++//#if !defined(LOGDOC_LOAD_IMAGES_FROM_PARSER) && !defined(CANVAS_SUPPORT)
++//			if ((new_elm->HasAttr(ATTR_ONLOAD) || new_elm->HasAttr(ATTR_ONERROR)) && !new_elm->GetHEListElmForInline(IMAGE_INLINE))
++//#endif // !LOGDOC_LOAD_IMAGES_FROM_PARSER && !CANVAS_SUPPORT
++			if (doLoadImgNow)
+ 			{
+ 				/* There are three reasons we might choose to load the image now.
+ 				   1. The tweak to load images from the parser is enabled.
+diff --git a/modules/prefs/prefsmanager/collections/pc_doc.txt b/modules/prefs/prefsmanager/collections/pc_doc.txt
+index f7e41e7..2d47a6b 100644
+--- a/modules/prefs/prefsmanager/collections/pc_doc.txt
++++ b/modules/prefs/prefsmanager/collections/pc_doc.txt
+@@ -508,4 +508,20 @@ Type:        boolean
+ Description: Draw images instantly
+ Default:     DEFAULT_TURBO_MODE
+ 
++Preference:  LoadImagesFromParser
++Depends on:
++Section:     Performance
++Key:         Load Images From Parser
++Type:        boolean
++Description: Load images from parser.  Turning this on speeds up page loading, but Opera may fetch some hidden images.
++Default:     DEFAULT_LOGDOC_LOAD_IMAGES_FROM_PARSER
++
++Preference:  AlwaysLoadImagesFromParserForCanvas
++Depends on:
++Section:     Performance
++Key:         Always Load Images From Parser For Canvas
++Type:        boolean
++Description: Always load images from parser if canvas support is turned on.  Turning this off speeds up page loading, but may break web.
++Default:     DEFAULT_LOGDOC_LOAD_IMAGES_FROM_PARSER_FOR_CANVAS
++
+ .eof
+-- 
+2.9.2
