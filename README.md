@@ -1,7 +1,7 @@
 # OpenOpera Patches
-A collection of patches sourced from different places, unknown authors (if you want to claim ownership of one just create an issue)
+A collection of patches for the Opera 12.15 source code, feel free to make a pull request if you have anything to add or fix.
 
-Feel free to make a pull request if you have anything to add or fix, or if you have any issues please make a report at https://github.com/PrestoXen/openopera-issues
+If you have any issues with Opera 12.15 please make a report on the [openopera-issues project](https://github.com/PrestoXen/openopera-issues/issues), or if you have problems with a patch please visit [the issue tracker here](https://github.com/PrestoXen/openopera-patches/issues). 
 
 You're also welcome to join the OpenOpera IRC: http://site.anonnet.org/webirc/openopera  
 Or join #openopera on crowley.anonnet.org:6697
@@ -11,7 +11,7 @@ Or join #openopera on crowley.anonnet.org:6697
 ### General patches
 - **FalseNullFix.patch**: patch to fix some FALSE->NULL errors
 - **VP9Fix.patch**: VP9 support patch (requires libvpx-1.3.0 (exactly)), no Windows support atm.
-- **DisableClickToActivate.patch**: Disables "Click to activate" on Flash applets
+- **DisableClickToActivate.patch**: disables "Click to activate" on Flash applets
 - **LoadImagesParser.patch**: TWEAK_LOGDOC_LOAD_IMAGES_FROM_PARSER turned into two preferences
 
 ### Linux/FreeBSD patches
@@ -24,8 +24,8 @@ Or join #openopera on crowley.anonnet.org:6697
 - **freebsd-11-gcc6.patch**: FreeBSD compiling patch by kandeshvari, [source](https://gist.github.com/kandeshvari/6e69327fb017ea95bced85c6f297a29f)
 
 ### Windows patches
-- **VSInstructions.txt**: instructions for building with VS (you should read this and the alternate version below)
+- **VSInstructions.md**: guide for building with VS2010 and VS2015 (you should also read the alt version below)
 - **VSInstructionsAlt.txt**: translated instructions provided by RedCatX, [source](https://geektimes.ru/post/284588/)
 - **VS2015Fix.patch**: patch for building on VS2015
 
-A full mirror of gst-opera (gstreamer code used by Opera) is also uploaded [here](http://www22.zippyshare.com/v/Wp1PrPRW/file.html), as the mirror on opensource.opera.com has a lot of issues when cloning.
+As the gstreamer repo on opensource.opera.com is broken, a full mirror can be found [here](http://www22.zippyshare.com/v/Wp1PrPRW/file.html)
