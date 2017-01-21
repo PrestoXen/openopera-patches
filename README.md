@@ -12,6 +12,7 @@ Or join #openopera on crowley.anonnet.org:6697
 - **FalseNullFix.patch**: patch to fix some FALSE->NULL errors
 - **VP9Fix.patch**: VP9 support patch (requires libvpx-1.3.0 (exactly)), no Windows support atm.
 - **DisableClickToActivate.patch**: Disables "Click to activate" on Flash applets
+- **LoadImagesParser.patch**: TWEAK_LOGDOC_LOAD_IMAGES_FROM_PARSER turned into two preferences
 
 ### Linux/FreeBSD patches
 - **LinuxBuildFix.patch**: fixes some build issues on Linux
