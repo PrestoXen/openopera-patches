@@ -28,8 +28,8 @@ Or join #openopera on crowley.anonnet.org:6697
 - **VSInstructionsAlt.txt**: translated instructions provided by RedCatX, [source](https://geektimes.ru/post/284588/)
 - **VS2015Fix.patch**: patch for building on VS2015
 
-### gst-opera
-- **gst-opera_instructions.txt**: guide for cloning the broken gst-opera repo
+### Gstreamer (Opera patched edition)
+- **gst-opera_instructions.txt**: guide for cloning the broken gst-opera repo into a working state
 - **gst-opera_clone.bat**: batch script to clone the broken gst-opera repo (requires wget & git for Windows)
 - **gst-opera_clone.sh**: shell script to clone the broken gst-opera repo (requires wget & git)
-- **[gst-opera_opensource.opera.com.zip](http://www22.zippyshare.com/v/Wp1PrPRW/file.html)**: all the gst-opera repos, already cloned and zipped (external download)
+- **[gst-opera_opensource.opera.com.zip](http://www22.zippyshare.com/v/Wp1PrPRW/file.html)**: all the gst-opera repos, already cloned and zipped, with small edits for VS2015 support (external download)
