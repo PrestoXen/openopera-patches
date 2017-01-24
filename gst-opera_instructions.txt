@@ -1,0 +1,52 @@
+How to clone gst-opera fully:
+(instead of reading this guide, under Windows you can just run gst-opera_clone.bat, Linux users can also try gst-opera_clone.sh)
+
+IF you're reading this you probably noticed how trying to fully clone the Opera version of gstreamer (gst-opera) gives a lot of errors, I'll explain how to work around these below.
+
+First, you should obviously have a working install of Git, whether through your package manager or a Windows installer.
+
+Once Git is setup, clone the main gst-opera directory:
+    git clone http://sourcecode.opera.com/gstreamer/gst-opera.git
+
+The naive way to continue is by following the steps shown at http://sourcecode.opera.com/gstreamer/, but we know those instructions don't work properly, so we have to do it another way.
+
+First make sure you've changed into your gst-opera directory:
+    cd gst-opera
+
+Now peek into the gst-opera/.gitmodules file to see what repos need to be cloned, make sure you've changed into your gst-opera folder, and then run the following:
+    git clone http://sourcecode.opera.com/gstreamer/libogg.git
+    git clone http://sourcecode.opera.com/gstreamer/libvorbis.git
+    git clone http://sourcecode.opera.com/gstreamer/libtheora.git
+    git clone http://sourcecode.opera.com/gstreamer/glib.git
+    git clone http://sourcecode.opera.com/gstreamer/gstreamer.git
+    git clone http://sourcecode.opera.com/gstreamer/gst-plugins-base.git
+    git clone http://sourcecode.opera.com/gstreamer/gst-plugins-good.git
+
+The astute among you may have noticed that gst-plugins-bad is excluded from the list above, that's because it has to be cloned a different way:
+    Run all the commands above, and then run the following to download the server copy of gst-plugins-bad:
+        wget -r http://sourcecode.opera.com/gstreamer/gst-plugins-bad.git -P gst-opera-bad1.git
+
+    Now clone from that server copy:
+        git clone gst-opera-bad1.git/sourcecode.opera.com/gstreamer/gst-plugins-bad.git
+
+Finally we'll setup each sub-repo:
+    cd glib
+    git checkout remotes/origin/2.20.5+OPERA
+
+    cd ../gst-plugins-bad
+    git checkout remotes/origin/RELEASE-0.10.19+OPERA
+
+    cd ../gst-plugins-base
+    git checkout remotes/origin/RELEASE-0.10.29+OPERA
+
+    cd ../gst-plugins-good
+    git checkout remotes/origin/RELEASE-0.10.23+OPERA
+
+    cd ../gstreamer
+    git checkout remotes/origin/RELEASE-0.10.29+OPERA
+
+Now the gst-opera repo should be complete, and you should be able to compile from it no problem.
+
+Enjoy!
+
+- Xam
