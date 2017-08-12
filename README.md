@@ -22,6 +22,7 @@ Or join #openopera on crowley.anonnet.org:6697
 - **PiFixes.patch**: patches for building on Raspberry Pi
 - **ArmFixes.patch**: patches for building for ARM platform (needed for Pi)
 - **freebsd-11-gcc6.patch**: FreeBSD compiling patch by kandeshvari, [source](https://gist.github.com/kandeshvari/6e69327fb017ea95bced85c6f297a29f)
+- **FixFreeType.patch**: Fix building against system version of libfreetype with newer versions of the FreeType API
 
 ### Windows patches
 - **VSInstructions.md**: guide for building with VS2010 and VS2015 (you should also read the alt version below)
