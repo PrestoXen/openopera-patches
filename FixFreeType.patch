@@ -1,0 +1,43 @@
+diff --git a/modules/libgogi/pi_impl/mde_opfont.cpp b/modules/libgogi/pi_impl/mde_opfont.cpp
+index 44efd58..dcb4d40 100644
+--- a/modules/libgogi/pi_impl/mde_opfont.cpp
++++ b/modules/libgogi/pi_impl/mde_opfont.cpp
+@@ -28,8 +28,8 @@
+ #   include "modules/libfreetype/include/freetype/ftoutln.h"
+ #  else // FT_INTERNAL_FREETYPE
+ #   include <ft2build.h>
+-#   include <freetype/ftglyph.h>
+-#   include <freetype/ftoutln.h>
++#   include FT_GLYPH_H
++#   include FT_OUTLINE_H
+ #  endif // FT_INTERNAL_FREETYPE
+ # endif // MDF_FREETYPE_SUPPORT && MDEFONT_MODULE
+ # ifdef MDF_AGFA_SUPPORT
+diff --git a/modules/mdefont/mdf_freetype.cpp b/modules/mdefont/mdf_freetype.cpp
+index 1708581..6228eca 100644
+--- a/modules/mdefont/mdf_freetype.cpp
++++ b/modules/mdefont/mdf_freetype.cpp
+@@ -23,10 +23,10 @@
+ # include "modules/libfreetype/include/freetype/ftsnames.h"
+ #else // FT_INTERNAL_FREETYPE
+ # include <ft2build.h>
+-# include <freetype/tttables.h>
+-# include <freetype/ftoutln.h>
+-# include <freetype/ttnameid.h>
+-# include <freetype/ftsnames.h>
++# include FT_TRUETYPE_TABLES_H
++# include FT_OUTLINE_H
++# include FT_TRUETYPE_IDS_H
++# include FT_SFNT_NAMES_H
+ #endif // FT_INTERNAL_FREETYPE
+ 
+ #include FT_FREETYPE_H
+@@ -39,7 +39,7 @@
+ # ifdef FT_INTERNAL_FREETYPE
+ #  include "modules/libfreetype/include/freetype/ftlcdfil.h"
+ # else // FT_INTERNAL_FREETYPE
+-#  include <freetype/ftlcdfil.h>
++#  include FT_LCD_FILTER_H
+ # endif // FT_INTERNAL_FREETYPE
+ #endif // FT_USE_SMOOTH_LCD_RENDERING || FT_USE_SMOOTH_LCDV_RENDERING
+ 
