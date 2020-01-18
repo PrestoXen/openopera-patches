@@ -1,0 +1,12 @@
+diff --git "a/modules/logdoc/src/htm_elm.cpp" "b/modules/logdoc/src/htm_elm.cpp"
+index 59c3783a..5d71d5e7 100644
+--- "a/modules/logdoc/src/htm_elm.cpp"
++++ "b/modules/logdoc/src/htm_elm.cpp"
+@@ -2620,6 +2620,7 @@ HTML_Element::SetAttrCommon(int i, short attr, ItemType item_type, void* val, BO
+ 
+ 		SetAttrSize(new_len);
+ 
++		if (!need_free)
+ 		DELETE_HTML_Attributes(data.attrs);
+ 		data.attrs = new_attrs;
+ 
